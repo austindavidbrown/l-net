@@ -1,11 +1,14 @@
 develop:
 	./env/bin/python3 setup.py check build_ext --inplace
-	./env/bin/python3 test.py
+	./env/bin/python3 package_test.py
 
 pip_install:
 	./env/bin/pip3 install ./
-	./env/bin/python3 test.py
+	./env/bin/python3 package_test.py
 
 python_setup:
-	./env/bin/pip3 install numpy
 	virtualenv -p python3 ./env
+	./env/bin/pip3 install numpy
+
+build_docs:
+	python -m pydoc -w ../docs/lnet_python

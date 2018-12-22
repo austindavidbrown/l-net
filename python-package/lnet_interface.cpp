@@ -218,9 +218,9 @@ static PyObject* python_cross_validation(PyObject *self, PyObject *args, PyObjec
 }
 
 static PyMethodDef methods[] = {
-    {"fit", reinterpret_cast<PyCFunction>(python_fit), METH_VARARGS|METH_KEYWORDS, ""},
-    {"predict", reinterpret_cast<PyCFunction>(python_predict), METH_VARARGS|METH_KEYWORDS, ""},
-    {"cross_validation", reinterpret_cast<PyCFunction>(python_cross_validation), METH_VARARGS|METH_KEYWORDS, ""},
+    {"fit", reinterpret_cast<PyCFunction>(python_fit), METH_VARARGS|METH_KEYWORDS, "doc string"},
+    {"predict", reinterpret_cast<PyCFunction>(python_predict), METH_VARARGS|METH_KEYWORDS, "doc string"},
+    {"cross_validation", reinterpret_cast<PyCFunction>(python_cross_validation), METH_VARARGS|METH_KEYWORDS, "doc string"},
     {NULL, NULL, 0, NULL},
 };
 

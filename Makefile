@@ -1,6 +1,6 @@
 
 develop:
-	clang++ -Wall -Wextra -std=c++17 -I ./eigen/ lnet_test.cpp -O3 -march=native -mfpmath=sse -o lnet_test
+	clang++ -Wall -Wextra -std=c++17 -I./include/eigen/ lnet_test.cpp -O3 -march=native -mfpmath=sse -o lnet_test
 	./lnet_test
 
 build_R:
