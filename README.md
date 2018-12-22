@@ -12,12 +12,12 @@ pip install git+https://github.com/austindavidbrown/l-net/#egg=l-net\&subdirecto
 
 Tutorial
 -------
-[Python package Introduction](https://github.com/austindavidbrown/l-net/docs/python_package_introduction.md)
+[Python package Introduction](https://github.com/austindavidbrown/l-net/blob/master/doc/python_package_introduction.md)
 
 
 Documentation
 -------
-See the [Python package documentation](https://github.com/austindavidbrown/l-net/docs/python_lnet.html) or help in Python.
+See the [Python package documentation](https://github.com/austindavidbrown/l-net/doc/python_lnet.html) or help in Python.
 
 License
 -------
