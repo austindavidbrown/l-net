@@ -125,7 +125,7 @@ VectorXd fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const 
 // Returns a matrix of B
 // We do not sort the lambdas here, they are ordered how you want them
 MatrixXd fit_warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
-                                         const Vector6d& alpha, vector<double> lambdas, const double step_size,
+                                         const Vector6d& alpha, const vector<double>& lambdas, const double step_size,
                                          const int max_iter, const double tolerance, const int random_seed) {
   int p = X.cols();
   int L = lambdas.size();

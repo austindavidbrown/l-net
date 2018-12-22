@@ -45,7 +45,7 @@ void test_prostate() {
 
   int K_fold = 10;
   double lambda = 11;
-  double step_size = 1/((double) 80);
+  double step_size = 1.0f/((double) 80);
   int max_iter = 10000;
   double tolerance = pow(10, -8);
   int random_seed = 0;
@@ -104,7 +104,6 @@ void test_prostate() {
   double intercept_best = 1/((double)n_train) *  VectorXd::Ones(n_train).transpose() * (y_train.mean() * VectorXd::Ones(n_train) - (X_train * B_best));
   cout << "\nTest MSE: " << mean_squared_error(y_test, predict(B_best, intercept_best, X_test)) << "\n";
 
-
 }
 
 void test_prox() {
@@ -115,6 +114,7 @@ void test_prox() {
   MatrixXd X_test = load_csv<MatrixXd>("data/X_test.csv");
   VectorXd y_test = load_csv<MatrixXd>("data/y_test.csv");
   VectorXd B_0 = VectorXd::Zero(X_train.cols());
+  int n_train = X_train.rows();
 
   int K_fold = 10;
   double lambda = .1;
@@ -140,8 +140,7 @@ void test_prox() {
   cout << "\nSingle fit test\n";
   VectorXd B = fit_proximal_gradient_cd(B_0, X_train, y_train, alpha, lambda, step_size, max_iter, tolerance, random_seed);
 
-  int n = X_train.rows();
-  double intercept = 1/((double)n) *  VectorXd::Ones(n).transpose() * (y_train.mean() * VectorXd::Ones(n) - (X_train * B));
+  double intercept = 1/((double)n_train) *  VectorXd::Ones(n_train).transpose() * (y_train.mean() * VectorXd::Ones(n_train) - (X_train * B));
   cout << "\nintercept:\n" << intercept << "\n";
 
   cout << "\nB:\n" << B << "\n";
@@ -173,6 +172,11 @@ void test_prox() {
   cv.risks.minCoeff(&min_row);
   double best_lambda = cv.lambdas[min_row];
   cout << "\nBest Lambda:\n" << best_lambda << "\n";
+
+  VectorXd B_best = fit_proximal_gradient_cd(B_0, X_train, y_train, alpha, best_lambda, step_size, max_iter, tolerance, random_seed);
+  double intercept_best = 1/((double)n_train) *  VectorXd::Ones(n_train).transpose() * (y_train.mean() * VectorXd::Ones(n_train) - (X_train * B_best));
+  cout << "\nTest MSE: " << mean_squared_error(y_test, predict(B_best, intercept_best, X_test)) << "\n";
+
 }
 
 // Benchmark for compiler optimization
