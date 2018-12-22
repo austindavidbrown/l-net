@@ -11,6 +11,12 @@ using std::vector;
 using std::sort;
 using std::cout;
 
+// TODO
+
+// pass by reference B
+// change B matrix to vector of vectors
+// Change return type to fit function
+
 // long double matrix, vector, scalar
 typedef long double ld;
 typedef Matrix<long double, Dynamic, Dynamic> MatrixXld;
@@ -64,9 +70,10 @@ VectorXd predict(const VectorXd& B, const double intercept, const MatrixXd& X) {
 //
 // Proximal Gradient Coordinate Descent
 //
-VectorXd fit_proximal_gradient_cd(VectorXd B, const MatrixXd& X, const VectorXd& y, 
+VectorXd fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
                               const Vector6d& alpha, const double lambda, const double step_size,
                               const int max_iter, const double tolerance, const int random_seed) {
+  VectorXd B = B_0; // create return value
   const int n = X.rows();
   const int p = X.cols();
 
