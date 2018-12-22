@@ -10,9 +10,14 @@ pip install numpy # install numpy
 pip install git+https://github.com/austindavidbrown/l-net/#egg=l-net\&subdirectory=python-package
 ```
 
+Tutorial
+-------
+[Python package Introduction](https://github.com/austindavidbrown/l-net/docs/python_package_introduction.md)
+
+
 Documentation
 -------
-See help for the Python package.
+See the [Python package documentation](https://github.com/austindavidbrown/l-net/docs/python_lnet.html) or help in Python.
 
 License
 -------
