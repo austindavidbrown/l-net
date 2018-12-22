@@ -53,7 +53,7 @@ vector<vector<T>> partition(const vector<T>& S, const size_t n) {
 }
 
 
-// Proximal Gradient
+// Proximal Gradient Coordinate Descent
 /// =====================================================================================
 
 VectorXd predict(const VectorXd& B, const double intercept, const MatrixXd& X) {
@@ -64,7 +64,7 @@ VectorXd predict(const VectorXd& B, const double intercept, const MatrixXd& X) {
 //
 // Proximal Gradient Coordinate Descent
 //
-VectorXd proximal_gradient_cd(VectorXd B, const MatrixXd& X, const VectorXd& y, 
+VectorXd fit_proximal_gradient_cd(VectorXd B, const MatrixXd& X, const VectorXd& y, 
                               const Vector6d& alpha, const double lambda, const double step_size,
                               const int max_iter, const double tolerance, const int random_seed) {
   const int n = X.rows();
@@ -117,7 +117,7 @@ VectorXd proximal_gradient_cd(VectorXd B, const MatrixXd& X, const VectorXd& y,
 
 // Returns a matrix of B
 // We do not sort the lambdas here, they are ordered how you want them
-MatrixXd warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
+MatrixXd fit_warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
                                          const Vector6d& alpha, vector<double> lambdas, const double step_size,
                                          const int max_iter, const double tolerance, const int random_seed) {
   int p = X.cols();
@@ -126,12 +126,12 @@ MatrixXd warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y,
 
   // do the first one normally
   VectorXd B_0 = VectorXd::Zero(p);
-  B_matrix.row(0) = proximal_gradient_cd(B_0, X, y, alpha, lambdas[0], step_size, max_iter, tolerance, random_seed);
+  B_matrix.row(0) = fit_proximal_gradient_cd(B_0, X, y, alpha, lambdas[0], step_size, max_iter, tolerance, random_seed);
 
   // Warm start after the first one
   for (int l = 1; l < L; l++) {
     VectorXd B_warm = B_matrix.row((l - 1)); // warm start
-    B_matrix.row(l) = proximal_gradient_cd(B_warm, X, y, alpha, lambdas[l], step_size, max_iter, tolerance, random_seed);
+    B_matrix.row(l) = fit_proximal_gradient_cd(B_warm, X, y, alpha, lambdas[l], step_size, max_iter, tolerance, random_seed);
   }
 
   return B_matrix;
@@ -188,7 +188,7 @@ CVType cross_validation_proximal_gradient_cd(const MatrixXd& X, const VectorXd& 
     }
 
     // do the computation
-    MatrixXd B_matrix = warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
+    MatrixXd B_matrix = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
     for (int l = 0; l < L; l++) {
       VectorXd B = B_matrix.row(l).transpose();
 

@@ -65,7 +65,7 @@ void test_prostate() {
   // Single fit test
   //
   cout << "\nProstate Single fit test\n";
-  VectorXd B = proximal_gradient_cd(B_0, X_train, y_train, alpha, lambda, step_size, max_iter, tolerance, random_seed);
+  VectorXd B = fit_proximal_gradient_cd(B_0, X_train, y_train, alpha, lambda, step_size, max_iter, tolerance, random_seed);
   cout << "\nB:\n" << B << "\n";
 
   double intercept = 1/((double)n_train) *  VectorXd::Ones(n_train).transpose() * (y_train.mean() * VectorXd::Ones(n_train) - (X_train * B)); // mean
@@ -78,7 +78,7 @@ void test_prostate() {
   // Warm start test
   //
   cout << "\nWarm start test\n";
-  MatrixXd B_matrix = warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
+  MatrixXd B_matrix = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
   cout << "\nB Matrix last:\n" << B_matrix.row(B_matrix.rows() - 1).transpose() << "\n";
 
   //
@@ -100,7 +100,7 @@ void test_prostate() {
   double best_lambda = cv.lambdas[min_row];
   cout << "\nBest Lambda:\n" << best_lambda << "\n";
 
-  VectorXd B_best = proximal_gradient_cd(B_0, X_train, y_train, alpha, best_lambda, step_size, max_iter, tolerance, random_seed);
+  VectorXd B_best = fit_proximal_gradient_cd(B_0, X_train, y_train, alpha, best_lambda, step_size, max_iter, tolerance, random_seed);
   double intercept_best = 1/((double)n_train) *  VectorXd::Ones(n_train).transpose() * (y_train.mean() * VectorXd::Ones(n_train) - (X_train * B_best));
   cout << "\nTest MSE: " << mean_squared_error(y_test, predict(B_best, intercept_best, X_test)) << "\n";
 
@@ -134,16 +134,11 @@ void test_prox() {
     lambdas.push_back(lambdas[i - 1] + .1);
   }
 
-
-  // -----------------
-  // Proximal Gradient Testing
-  // -----------------
-
   //
   // Single fit test
   //
   cout << "\nSingle fit test\n";
-  VectorXd B = proximal_gradient_cd(B_0, X_train, y_train, alpha, lambda, step_size, max_iter, tolerance, random_seed);
+  VectorXd B = fit_proximal_gradient_cd(B_0, X_train, y_train, alpha, lambda, step_size, max_iter, tolerance, random_seed);
 
   int n = X_train.rows();
   double intercept = 1/((double)n) *  VectorXd::Ones(n).transpose() * (y_train.mean() * VectorXd::Ones(n) - (X_train * B));
@@ -157,7 +152,7 @@ void test_prox() {
   // Warm start test
   //
   cout << "\nWarm start test\n";
-  MatrixXd B_matrix = warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
+  MatrixXd B_matrix = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
   cout << "\nB Matrix last:\n" << B_matrix.row(B_matrix.rows() - 1).transpose() << "\n";
 
   //
@@ -209,8 +204,8 @@ void test_random_gen() {
 }
 
 int main() {
-  test_prostate();
-  // test_prox();
+  //test_prostate();
+  test_prox();
   // test_random_gen();
   // bench();
 }
