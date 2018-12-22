@@ -7,4 +7,5 @@ pip_install:
 	./env/bin/python3 test.py
 
 python_setup:
+	./env/bin/pip3 install numpy
 	virtualenv -p python3 ./env

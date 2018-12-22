@@ -1,9 +1,0 @@
-useDynLib(pros, .registration = TRUE)
-
-importFrom("stats", "predict")
-importFrom("utils", "read.csv")
-
-S3method(predict,cv_pros)
-S3method(predict,pros)
-export(cv.pros)
-export(pros)

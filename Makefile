@@ -1,10 +1,7 @@
 
 develop:
-	clang++ -Wall -Wextra -std=c++17 -I ./eigen/ pros_test.cpp -O3 -march=native -o pros_test
-	./pros_test
-
-production:
-	clang++ -std=c++17 -I ./eigen/ test.cpp -o test -DNDEBUG -O3 -march=native -mfpmath=sse && ./test
+	clang++ -Wall -Wextra -std=c++17 -I ./eigen/ lnet_test.cpp -O3 -march=native -mfpmath=sse -o lnet_test
+	./lnet_test
 
 build_R:
 	R -f R_build.R
@@ -19,6 +16,7 @@ build_python:
 
 
 # References:
+# -DNDEBUG
 # clang++ -Wall -Wextra -std=c++17 -I ./eigen/ -O3 -march=native -mfpmath=sse sgcd.cpp -o sgcd && ./sgcd
 
 # vectorize and improve math

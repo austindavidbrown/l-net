@@ -1,5 +1,5 @@
-import pros
 import numpy as np
+import lnet
 
 ###
 # Generate data
@@ -36,14 +36,14 @@ random_seed = 777;
 ###
 # Single fit test
 ###
-B, intercept = pros.fit(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_, step_size = step_size)
-print("mse:", ((y_test - pros.predict(X = X_test, intercept = intercept, B = B))**2).mean())
+B, intercept = lnet.fit(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_, step_size = step_size)
+print("mse:", ((y_test - lnet.predict(X = X_test, intercept = intercept, B = B))**2).mean())
 
 ###
 # CV test
 ###
-cv_risks, cv_lambdas, best_lambda = pros.cross_validation(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
+cv_risks, cv_lambdas, best_lambda = lnet.cross_validation(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
 
-B, intercept = pros.fit(X = X_train, y = y_train, alpha = alpha, lambda_ = best_lambda, step_size = step_size)
-print("mse:", ((y_test - pros.predict(X = X_test, intercept = intercept, B = B))**2).mean())
+B, intercept = lnet.fit(X = X_train, y = y_train, alpha = alpha, lambda_ = best_lambda, step_size = step_size)
+print("mse:", ((y_test - lnet.predict(X = X_test, intercept = intercept, B = B))**2).mean())
 
