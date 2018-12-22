@@ -17,7 +17,7 @@ Tutorial
 
 Documentation
 -------
-See the [Python package documentation](https://github.com/austindavidbrown/l-net/doc/python_lnet.html) or help in Python.
+See the [Python package documentation](http://htmlpreview.github.io/?https://github.com/austindavidbrown/l-net/blob/master/doc/lnet_python.html) or help in Python.
 
 License
 -------
