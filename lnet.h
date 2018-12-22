@@ -13,7 +13,6 @@ using std::cout;
 
 // TODO
 
-// pass by reference B
 // change B matrix to vector of vectors
 // Change return type to fit function
 
@@ -146,12 +145,14 @@ MatrixXd fit_warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& 
 
 // Prox Gradient Cross Validation
 CVType cross_validation_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
-                                             const double K, const Vector6d& alpha, vector<double> lambdas, const double step_size,
+                                             const double K_fold, const Vector6d& alpha, const vector<double>& arg_lambdas, const double step_size,
                                              const int max_iter, const double tolerance, const int random_seed) {
   int n = X.rows();
   int p = X.cols();
+  vector<double> lambdas = arg_lambdas; // copy argument
   int L = lambdas.size();
-  MatrixXd test_risks_matrix = MatrixXd::Zero(L, K);
+  MatrixXd test_risks_matrix = MatrixXd::Zero(L, K_fold);
+
   sort(lambdas.begin(), lambdas.end(), std::greater<double>()); // sort the lambdas in place descending
 
   // Create random permutation using the Mersenne twister random number engine 64 bit
@@ -160,7 +161,7 @@ CVType cross_validation_proximal_gradient_cd(const MatrixXd& X, const VectorXd& 
   std::mt19937_64 rng(random_seed);
   std::shuffle(std::begin(I), std::end(I), rng); // permute
 
-  vector<vector<int>> partitions = partition(I, K);
+  vector<vector<int>> partitions = partition(I, K_fold);
   for (size_t k = 0; k < partitions.size(); k++) {
     vector<int> TEST = partitions[k];
 
