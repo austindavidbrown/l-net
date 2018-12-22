@@ -1,4 +1,4 @@
-Penalized Regression on Steroids
+l-net
 ===========
 
 Adds the ability to combine l1 to l10 penalties in regression extending the elastic-net.
