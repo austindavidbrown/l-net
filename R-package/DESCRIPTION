@@ -1,0 +1,12 @@
+Package: pros
+Title: Penalized Regression on Steroids
+Version: 0.1
+Author: Austin David Brown <brow5079@umn.edu>
+Maintainer: Austin David Brown <brow5079@umn.edu>
+Description: This is a project for STAT8053 at the University of Minnesota. Please see the README on github for compiler flags to improve performance.
+Depends: R (>= 3.5.0)
+SystemRequirements: C++11
+License:  GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1
