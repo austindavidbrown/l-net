@@ -2,17 +2,15 @@ Python Package Introduction
 ===
 
 Install l-net
----------------
+---
 
 ```bash
 pip install numpy # install numpy
 pip install git+https://github.com/austindavidbrown/l-net/#egg=l-net\&subdirectory=python-package
 ```
 
-Usage
----------------
-
 Generate sparse data
+---
 
 ```python
 import numpy as np
@@ -38,6 +36,7 @@ X_test, y_test = X[TEST, :], y[TEST]
 ```
 
 Train and predict
+---
 
 ```python
 import lnet as lnet
