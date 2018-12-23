@@ -72,10 +72,9 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   PyArrayObject* arg_lambdas = NULL;
 
   // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!O!|iidi", (char**) keywords,
-                        &PyArray_Type, &arg_X, &PyArray_Type, &arg_y,
-                        &PyArray_Type, &arg_alpha, &PyArray_Type, &arg_lambdas, 
-                        &(self->K_fold), &(self->max_iter), &(self->tolerance), &(self->random_seed))) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!|O!iidi", (char**) keywords,
+                        &PyArray_Type, &arg_X, &PyArray_Type, &arg_y, &PyArray_Type, &arg_alpha, 
+                        &PyArray_Type, &arg_lambdas, &(self->K_fold), &(self->max_iter), &(self->tolerance), &(self->random_seed))) {
     return -1;
   }
 
@@ -94,14 +93,22 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   arg_alpha = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_alpha), NPY_DOUBLE, NPY_IN_ARRAY));
   double* data_ptr_arg_alpha = reinterpret_cast<double*>(arg_alpha->data);
 
-  // Handle lambdas argument
-  arg_lambdas = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_lambdas), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* data_ptr_arg_lambdas = reinterpret_cast<double*>(arg_lambdas->data);
-  const int nrow_lambdas = (arg_lambdas->dimensions)[0];
-
-  // Build unordered lambdas
+  /*
+  Handle lambdas argument
+  If not specified create a default sequence, otherwise convert the user specified lambdas
+  */
   vector<double> lambdas;
-  lambdas.assign(data_ptr_arg_lambdas, data_ptr_arg_lambdas + nrow_lambdas);
+  if (arg_lambdas == NULL) {
+    lambdas.push_back(ncol_X);
+    for (int i = 1; i < 100; i++) {
+      lambdas.push_back(lambdas[i - 1] + .1);
+    }
+  } else {
+    arg_lambdas = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_lambdas), NPY_DOUBLE, NPY_IN_ARRAY));
+    double* data_ptr_arg_lambdas = reinterpret_cast<double*>(arg_lambdas->data);
+    const int nrow_lambdas = (arg_lambdas->dimensions)[0];
+    lambdas.assign(data_ptr_arg_lambdas, data_ptr_arg_lambdas + nrow_lambdas);
+  }
 
   // Setup
   const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
