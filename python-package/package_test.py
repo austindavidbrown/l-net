@@ -36,10 +36,12 @@ print("Test MSE:", ((y_test - fit.predict(X = X_test))**2).mean())
 ###
 # CV test
 ###
-lambdas = np.array([.1, .5, 1, 2, 3, 4])
-K_fold = 10;
+cv = lnet.CV(X = X_train, y = y_train, alpha = alpha, lambdas = np.array([.1, .5, 1, 2, 3, 4]))
+print("CV Test, specified lambdas: MSE:", ((y_test - cv.predict(X = X_test))**2).mean())
+
 cv = lnet.CV(X = X_train, y = y_train, alpha = alpha)
-print("CV Test MSE:", ((y_test - cv.predict(X = X_test))**2).mean())
+print("CV Test, default lambdas: MSE:", ((y_test - cv.predict(X = X_test))**2).mean())
+
 
 ###
 # Coeff test
