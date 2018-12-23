@@ -38,7 +38,6 @@ random_seed = 777;
 ###
 fit = lnet.Lnet(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_, step_size = step_size)
 print("Test MSE:", ((y_test - fit.predict(X = X_test))**2).mean())
-print(fit.coeff())
 
 ###
 # CV test
@@ -46,5 +45,7 @@ print(fit.coeff())
 cv = lnet.LnetCV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
 print("CV Test MSE:", ((y_test - cv.predict(X = X_test))**2).mean())
 
-
-
+###
+# Coeff test
+###
+print(fit.coeff())
