@@ -34,6 +34,27 @@ M load_csv (const std::string & path) {
 // Testing functions
 //
 
+void test_fit_proximal_gradient(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, double lambda) {
+  cout << R"(
+  Test fit_proximal_gradient
+  -------
+  )";
+
+  int max_iter = 10000;
+  double tolerance = pow(10, -6);
+  int random_seed = 0;
+
+  VectorXd B_0 = VectorXd::Zero(X_train.cols());
+  FitType fit = fit_proximal_gradient(B_0, X_train, y_train, alpha, lambda, max_iter, tolerance, random_seed);
+
+  cout << "\nConverged:" << fit.converged << "\n";
+  cout << "\nintercept:\n" << fit.intercept << "\n";
+  cout << "\nB:\n" << fit.B << "\n";
+
+  cout << "\nMSE: " << mean_squared_error(y_train, predict(X_train, fit.intercept, fit.B)) << "\n";
+  cout << "\nTest MSE: " << mean_squared_error(y_test, predict(X_test, fit.intercept, fit.B)) << "\n";
+}
+
 void test_fit_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, double lambda, double step_size) {
   cout << R"(
   Test fit_proximal_gradient_cd
@@ -41,7 +62,7 @@ void test_fit_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixX
   )";
 
   int max_iter = 10000;
-  double tolerance = pow(10, -8);
+  double tolerance = pow(10, -6);
   int random_seed = 0;
 
   VectorXd B_0 = VectorXd::Zero(X_train.cols());
@@ -62,7 +83,7 @@ void test_fit_warm_start_proximal_gradient_cd(MatrixXd& X, VectorXd& y, Vector6d
   )";
 
   int max_iter = 10000;
-  double tolerance = pow(10, -8);
+  double tolerance = pow(10, -6);
   int random_seed = 0;
 
   vector<FitType> fits = fit_warm_start_proximal_gradient_cd(X, y, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
@@ -78,7 +99,7 @@ void test_cross_validation_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_t
   )";
 
   int max_iter = 10000;
-  double tolerance = pow(10, -8);
+  double tolerance = pow(10, -6);
   int random_seed = 0;
 
   CVType cv = cross_validation_proximal_gradient_cd(X_train, y_train, K_fold, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
@@ -150,6 +171,8 @@ void test_prox() {
   double lambda = .1;
   test_fit_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
 
+  test_fit_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambda);
+
   //
   // warm start test
   //
@@ -186,6 +209,8 @@ void test_prostate() {
   //
   double lambda = 11;
   test_fit_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
+
+  test_fit_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambda);
 
   //
   // warm start test

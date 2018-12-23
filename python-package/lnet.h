@@ -77,6 +77,114 @@ VectorXd predict(const MatrixXd& X, const double intercept, const VectorXd& B) {
   return intercept * VectorXd::Ones(n) + (X * B);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+Proximal Gradient Descent
+
+*/
+
+FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
+                              const Vector6d& alpha, const double lambda,
+                              const int max_iter, const double tolerance, const int random_seed) {
+  VectorXd B = B_0; // create return value
+  const int n = X.rows();
+  const int p = X.cols();
+
+  // Center: Convert X, y to mean 0
+  MatrixXd cX = MatrixXd(n, p);
+  for (int j = 0; j < X.cols(); j++) {
+    cX.col(j) = X.col(j) - (X.col(j).mean() * VectorXd::Ones(n));
+  }
+  const VectorXd cy = y - (y.mean() * VectorXd::Ones(n));
+
+  for (int j = 0; j < max_iter; j++) {
+    const VectorXd B_old = B; // Copy B for comparison
+  
+    // Compute derivative of f
+    VectorXd Df = VectorXd::Zero(p); // Derivative of loss + differentiable penalizations
+    const VectorXd cache_d = cy - (cX * B_old); // compute only once for speed
+    for (int i = 0; i < p; i++) {
+      Df(i) = -1 * cX.col(i).transpose() * cache_d;
+    }
+
+    // Line search
+    double h_j = 0.25; // initial step size
+    bool line_searching = true;
+    while (line_searching) {
+      for (int i = 0; i < p; i++) {
+        // Proximal Mapping of g: Soft Thresholding
+        const double v_i = B_old(i) - h_j * Df(i); // gradient step
+        if (v_i < -h_j * alpha(0) * lambda) {
+          B(i) = v_i + h_j * alpha(0) * lambda;
+        } else if (v_i >= -h_j * alpha(0) * lambda && v_i <= h_j * alpha(0) * lambda) {
+          B(i) = 0;
+        } else if (v_i > h_j * alpha(0) * lambda) {
+          B(i) = v_i - h_j * alpha(0) * lambda;
+        }
+      }
+
+      // Line search criterion from Boyd: Proximal algorithms
+      if ( (cy - (cX * B)).squaredNorm() <= cache_d.squaredNorm() + Df.transpose() * (B - B_old) + 1.0/((double)2.0 * h_j) * (B - B_old).squaredNorm() ) {
+        line_searching = false; // break
+      } else {
+        h_j = 0.5 * h_j; // half step size
+      } 
+    }
+
+    // Stop if the norm of the Moreau-Yoshida convolution gradient is less than tolerance
+    if ( ((B - B_old)).squaredNorm() < tolerance ) {
+      const double intercept = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
+      // Build return value
+      FitType fit;
+      fit.converged = true;
+      fit.intercept = intercept;
+      fit.B = B;
+      return fit;
+    }
+  }
+
+  std::cout << "Failed to converge!\n";
+  // Build return value
+  const double intercept = 1/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
+  FitType fit;
+  fit.converged = false;
+  fit.intercept = intercept;
+  fit.B = B;
+  return fit;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
 
 Proximal Gradient Coordinate Descent
