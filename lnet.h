@@ -13,7 +13,6 @@ using std::cout;
 
 // TODO
 
-// change B matrix to vector of vectors
 // Change return type to fit function
 
 // long double matrix, vector, scalar
@@ -61,7 +60,7 @@ vector<vector<T>> partition(const vector<T>& S, const size_t n) {
 // Proximal Gradient Coordinate Descent
 /// =====================================================================================
 
-VectorXd predict(const VectorXd& B, const double intercept, const MatrixXd& X) {
+VectorXd predict(const MatrixXd& X, const double intercept, const VectorXd& B) {
   const int n = X.rows();
   return intercept * VectorXd::Ones(n) + (X * B);
 }
@@ -203,7 +202,7 @@ CVType cross_validation_proximal_gradient_cd(const MatrixXd& X, const VectorXd& 
       int n = X_train.rows();
       double intercept = 1/((double)n) *  VectorXd::Ones(n).transpose() * (y_train.mean() * VectorXd::Ones(n) - (X_train * B));
 
-      test_risks_matrix(l, k) = mean_squared_error(y_test, predict(B, intercept, X_test));
+      test_risks_matrix(l, k) = mean_squared_error(y_test, predict(X_test, intercept, B));
     }
   }
 

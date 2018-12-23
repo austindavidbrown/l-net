@@ -71,8 +71,8 @@ void test_prostate() {
   double intercept = 1/((double)n_train) *  VectorXd::Ones(n_train).transpose() * (y_train.mean() * VectorXd::Ones(n_train) - (X_train * B)); // mean
   cout << "\nintercept:\n" << intercept << "\n";
 
-  cout << "\nMSE: " << mean_squared_error(y_train, predict(B, intercept, X_train)) << "\n";
-  cout << "\nTest MSE: " << mean_squared_error(y_test, predict(B, intercept, X_test)) << "\n";
+  cout << "\nMSE: " << mean_squared_error(y_train, predict(X_train, intercept, B)) << "\n";
+  cout << "\nTest MSE: " << mean_squared_error(y_test, predict(X_test, intercept, B)) << "\n";
 
   //
   // Warm start test
@@ -102,7 +102,7 @@ void test_prostate() {
 
   VectorXd B_best = fit_proximal_gradient_cd(B_0, X_train, y_train, alpha, best_lambda, step_size, max_iter, tolerance, random_seed);
   double intercept_best = 1/((double)n_train) *  VectorXd::Ones(n_train).transpose() * (y_train.mean() * VectorXd::Ones(n_train) - (X_train * B_best));
-  cout << "\nTest MSE: " << mean_squared_error(y_test, predict(B_best, intercept_best, X_test)) << "\n";
+  cout << "\nTest MSE: " << mean_squared_error(y_test, predict(X_test, intercept_best, B_best)) << "\n";
 
 }
 
@@ -144,7 +144,7 @@ void test_prox() {
   cout << "\nintercept:\n" << intercept << "\n";
 
   cout << "\nB:\n" << B << "\n";
-  cout << "\ntest MSE: " << mean_squared_error(y_test, predict(B, intercept, X_test)) << "\n";
+  cout << "\ntest MSE: " << mean_squared_error(y_test, predict(X_test, intercept, B)) << "\n";
 
   
   //
@@ -175,7 +175,7 @@ void test_prox() {
 
   VectorXd B_best = fit_proximal_gradient_cd(B_0, X_train, y_train, alpha, best_lambda, step_size, max_iter, tolerance, random_seed);
   double intercept_best = 1/((double)n_train) *  VectorXd::Ones(n_train).transpose() * (y_train.mean() * VectorXd::Ones(n_train) - (X_train * B_best));
-  cout << "\nTest MSE: " << mean_squared_error(y_test, predict(B_best, intercept_best, X_test)) << "\n";
+  cout << "\nTest MSE: " << mean_squared_error(y_test, predict(X_test, intercept_best, B_best)) << "\n";
 
 }
 
