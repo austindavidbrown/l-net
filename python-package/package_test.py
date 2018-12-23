@@ -36,7 +36,9 @@ random_seed = 777;
 ###
 # Single fit test
 ###
-B, intercept = lnet.fit(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_, step_size = step_size)
+fit = lnet.fit(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_, step_size = step_size)
+intercept = fit["intercept"]
+B = fit["B"]
 print("mse:", ((y_test - lnet.predict(X = X_test, intercept = intercept, B = B))**2).mean())
 
 ###
@@ -44,6 +46,8 @@ print("mse:", ((y_test - lnet.predict(X = X_test, intercept = intercept, B = B))
 ###
 cv_risks, cv_lambdas, best_lambda = lnet.cross_validation(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
 
-B, intercept = lnet.fit(X = X_train, y = y_train, alpha = alpha, lambda_ = best_lambda, step_size = step_size)
-print("mse:", ((y_test - lnet.predict(X = X_test, intercept = intercept, B = B))**2).mean())
+best_fit = lnet.fit(X = X_train, y = y_train, alpha = alpha, lambda_ = best_lambda, step_size = step_size)
+best_intercept = fit["intercept"]
+best_B = fit["B"]
+print("mse:", ((y_test - lnet.predict(X = X_test, intercept = best_intercept, B = best_B))**2).mean())
 

@@ -67,15 +67,19 @@ static PyObject* python_fit(PyObject *self, PyObject *args, PyObject* kwargs) {
   //
   // Copy to Python
   //
-  long res_dims[1];
-  res_dims[0] = B.rows();
-  PyArrayObject* res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_dims, NPY_DOUBLE)); // 1 is for vector
-  double* ptr_res_data = (reinterpret_cast<double*>(res->data));
+  long B_res_dims[1];
+  B_res_dims[0] = B.rows();
+  PyArrayObject* B_res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, B_res_dims, NPY_DOUBLE)); // 1 is for vector
+  double* ptr_B_res = (reinterpret_cast<double*>(B_res->data));
 
   for (int i = 0; i < B.rows(); i++) {
-    ptr_res_data[i] = B(i);
+    ptr_B_res[i] = B(i);
   }
-  return Py_BuildValue("Od", res, intercept);
+  
+  // return dictionary
+  return Py_BuildValue("{s:d, s:O}",
+                "intercept", intercept, 
+                "B", B_res);
 }
 
 static PyObject* python_predict(PyObject *self, PyObject *args, PyObject* kwargs) {
