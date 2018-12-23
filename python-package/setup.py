@@ -6,7 +6,8 @@ setup(
     version="0.1",
     author = "Austin David Brown",
     author_email = "brow5079@umn.edu",
-    url = "github.com/austindavidbrown/l-net",
+    url = "https://github.com/austindavidbrown/l-net",
+    description="Adds the ability to combine l1 to l10 penalties in regression extending the elastic-net.",
     license = "GPL3",
     ext_modules = [
       Extension(
