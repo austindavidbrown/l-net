@@ -11,16 +11,17 @@ using std::vector;
 using std::sort;
 using std::cout;
 
-// TODO
-
-// Change return type to fit function
-
 // long double matrix, vector, scalar
 typedef long double ld;
 typedef Matrix<long double, Dynamic, Dynamic> MatrixXld;
 typedef Matrix<long double, Dynamic, 1> VectorXld;
 
 typedef Matrix<double, 6, 1> Vector6d;
+
+struct FitType {
+  double intercept;
+  VectorXd B;
+};
 
 struct CVType {
   VectorXd risks;
@@ -68,7 +69,7 @@ VectorXd predict(const MatrixXd& X, const double intercept, const VectorXd& B) {
 //
 // Proximal Gradient Coordinate Descent
 //
-VectorXd fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
+FitType fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
                               const Vector6d& alpha, const double lambda, const double step_size,
                               const int max_iter, const double tolerance, const int random_seed) {
   VectorXd B = B_0; // create return value
@@ -112,33 +113,44 @@ VectorXd fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const 
 
     // Stop if the norm of the Moreau-Yoshida convolution gradient is less than tolerance
     if ( (1/h_j * (B_old - B)).squaredNorm() < tolerance ) {
-      return B;
+      const double intercept = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
+      // Build return value
+      FitType fit;
+      fit.intercept = intercept;
+      fit.B = B;
+      return fit;
     }
   }
 
   std::cout << "Failed to converge! Tune the step size.\n";
-  return B;
+  // Build return value
+  const double intercept = 1/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
+  FitType fit;
+  fit.intercept = intercept;
+  fit.B = B;
+  return fit;
 }
 
 // Returns a vector of B corresponding to lambdas using warm-start.
 // We do not sort the lambdas here, they are ordered how you want them
-vector<VectorXd> fit_warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
+vector<FitType> fit_warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
                                          const Vector6d& alpha, const vector<double>& lambdas, const double step_size,
                                          const int max_iter, const double tolerance, const int random_seed) {
   const int p = X.cols();
   const int L = lambdas.size();
-  vector<VectorXd> B_vector;
+  vector<FitType> fit_vector;
 
   // do the first one normally
   VectorXd B_0 = VectorXd::Zero(p);
-  B_vector.push_back(fit_proximal_gradient_cd(B_0, X, y, alpha, lambdas[0], step_size, max_iter, tolerance, random_seed));
+  fit_vector.push_back(fit_proximal_gradient_cd(B_0, X, y, alpha, lambdas[0], step_size, max_iter, tolerance, random_seed));
 
   // Warm start after the first one
   for (int l = 1; l < L; l++) {
-    VectorXd B_warm = B_vector.at(l - 1); // warm start
-    B_vector.push_back(fit_proximal_gradient_cd(B_warm, X, y, alpha, lambdas[l], step_size, max_iter, tolerance, random_seed));
+    const FitType fit_warm = fit_vector.at(l - 1); // warm start
+    const VectorXd B_warm = fit_warm.B;
+    fit_vector.push_back(fit_proximal_gradient_cd(B_warm, X, y, alpha, lambdas[l], step_size, max_iter, tolerance, random_seed));
   }
-  return B_vector;
+  return fit_vector;
 }
 
 // Prox Gradient Cross Validation
@@ -194,13 +206,11 @@ CVType cross_validation_proximal_gradient_cd(const MatrixXd& X, const VectorXd& 
     }
 
     // So the computation
-    const vector<VectorXd> B_vector = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
-    for (size_t l = 0; l < B_vector.size(); l++) {
-      const VectorXd B = B_vector.at(l);
-
-      // compute the intercept
-      int n = X_train.rows();
-      double intercept = 1/((double)n) *  VectorXd::Ones(n).transpose() * (y_train.mean() * VectorXd::Ones(n) - (X_train * B));
+    const vector<FitType> fit_vector = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
+    for (size_t l = 0; l < fit_vector.size(); l++) {
+      const FitType fit = fit_vector.at(l);
+      const VectorXd B = fit.B;
+      const double intercept = fit.intercept;
 
       test_risks_matrix(l, k) = mean_squared_error(y_test, predict(X_test, intercept, B));
     }
