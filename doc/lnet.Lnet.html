@@ -9,14 +9,49 @@
 <font color="#000000" face="helvetica, arial"><strong>lnet.Lnet</strong> = <a name="lnet.Lnet">class Lnet</a>(<a href="builtins.html#object">object</a>)</font></td></tr>
     
 <tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt>doc&nbsp;string<br>&nbsp;</tt></td></tr>
+<td colspan=2><tt>Lnet<br>
+&nbsp;<br>
+The&nbsp;\code{Lnet}&nbsp;class&nbsp;is&nbsp;used&nbsp;to&nbsp;fit&nbsp;a&nbsp;single&nbsp;regression&nbsp;model&nbsp;with&nbsp;a&nbsp;specified&nbsp;penalization.&nbsp;<br>
+&nbsp;<br>
+@param&nbsp;X&nbsp;is&nbsp;an&nbsp;\eqn{n&nbsp;\times&nbsp;m}-dimensional&nbsp;matrix&nbsp;of&nbsp;the&nbsp;data.<br>
+@param&nbsp;y&nbsp;is&nbsp;an&nbsp;\eqn{n&nbsp;\times&nbsp;m}-dimensional&nbsp;matrix&nbsp;of&nbsp;the&nbsp;data.<br>
+@param&nbsp;alpha&nbsp;is&nbsp;a&nbsp;\eqn{6}-dimensional&nbsp;vector&nbsp;of&nbsp;the&nbsp;convex&nbsp;combination&nbsp;corresponding&nbsp;to&nbsp;the&nbsp;penalization:<br>
+\itemize{<br>
+\item&nbsp;\eqn{\alpha_1}&nbsp;is&nbsp;the&nbsp;\eqn{l^1}&nbsp;penalty.<br>
+&nbsp;&nbsp;\item&nbsp;\eqn{\alpha_2}&nbsp;is&nbsp;the&nbsp;\eqn{l^2}&nbsp;penalty.<br>
+&nbsp;&nbsp;\item&nbsp;\eqn{\alpha_3}&nbsp;is&nbsp;the&nbsp;\eqn{l^4}&nbsp;penalty.<br>
+&nbsp;&nbsp;\item&nbsp;\eqn{\alpha_4}&nbsp;is&nbsp;the&nbsp;\eqn{l^6}&nbsp;penalty.<br>
+&nbsp;&nbsp;\item&nbsp;\eqn{\alpha_5}&nbsp;is&nbsp;the&nbsp;\eqn{l^8}&nbsp;penalty.<br>
+&nbsp;&nbsp;\item&nbsp;\eqn{\alpha_6}&nbsp;is&nbsp;the&nbsp;\eqn{l^{10}}&nbsp;penalty.<br>
+}<br>
+@param&nbsp;lambda&nbsp;is&nbsp;the&nbsp;Lagrangian&nbsp;dual&nbsp;penalization&nbsp;parameter.<br>
+@param&nbsp;step_size&nbsp;is&nbsp;a&nbsp;tuning&nbsp;parameter&nbsp;defining&nbsp;the&nbsp;step&nbsp;size.&nbsp;Larger&nbsp;values&nbsp;are&nbsp;more&nbsp;aggressive&nbsp;and&nbsp;smaller&nbsp;values&nbsp;are&nbsp;less&nbsp;aggressive.<br>
+@param&nbsp;max_iter&nbsp;is&nbsp;the&nbsp;maximum&nbsp;iterations&nbsp;the&nbsp;algorithm&nbsp;will&nbsp;run&nbsp;regardless&nbsp;of&nbsp;convergence.<br>
+@param&nbsp;tolerance&nbsp;is&nbsp;the&nbsp;accuracy&nbsp;of&nbsp;the&nbsp;stopping&nbsp;criterion.<br>
+@param&nbsp;random_seed&nbsp;is&nbsp;the&nbsp;random&nbsp;seed&nbsp;used&nbsp;in&nbsp;the&nbsp;algorithms.<br>
+&nbsp;<br>
+@return&nbsp;<br>
+A&nbsp;class&nbsp;\code{Lnet}<br>
+&nbsp;<br>
+@references<br>
+Zou,&nbsp;Hui.&nbsp;“Regularization&nbsp;and&nbsp;variable&nbsp;selection&nbsp;via&nbsp;the&nbsp;elastic&nbsp;net.”&nbsp;(2004).<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
 <dl><dt><a name="Lnet-__init__"><strong>__init__</strong></a>(self, /, *args, **kwargs)</dt><dd><tt>Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</tt></dd></dl>
 
-<dl><dt><a name="Lnet-coeff"><strong>coeff</strong></a>(...)</dt><dd><tt>doc&nbsp;string</tt></dd></dl>
+<dl><dt><a name="Lnet-coeff"><strong>coeff</strong></a>(...)</dt><dd><tt>Lnet&nbsp;coeff<br>
+&nbsp;<br>
+Returns&nbsp;the&nbsp;coefficients.</tt></dd></dl>
 
-<dl><dt><a name="Lnet-predict"><strong>predict</strong></a>(...)</dt><dd><tt>doc&nbsp;string</tt></dd></dl>
+<dl><dt><a name="Lnet-predict"><strong>predict</strong></a>(...)</dt><dd><tt>Lnet&nbsp;Prediction<br>
+&nbsp;<br>
+The&nbsp;prediction&nbsp;function&nbsp;for&nbsp;\code{pros}.<br>
+&nbsp;<br>
+@param&nbsp;object&nbsp;an&nbsp;object&nbsp;of&nbsp;class&nbsp;\code{pros}<br>
+@param&nbsp;X&nbsp;is&nbsp;an&nbsp;\eqn{n&nbsp;\times&nbsp;m}-dimensional&nbsp;matrix&nbsp;of&nbsp;the&nbsp;data.<br>
+@param&nbsp;...&nbsp;Other&nbsp;parameters&nbsp;(this&nbsp;is&nbsp;required&nbsp;by&nbsp;R)<br>
+&nbsp;<br>
+@return&nbsp;A&nbsp;\code{vector}&nbsp;of&nbsp;prediction&nbsp;values.</tt></dd></dl>
 
 <hr>
 Static methods defined here:<br>

@@ -9,7 +9,7 @@ pip install numpy # install numpy
 pip install git+https://github.com/austindavidbrown/l-net/#egg=l-net\&subdirectory=python-package
 ```
 
-Generate sparse data
+Generate sparse data with numpy or load a dataset
 ---
 
 ```python
@@ -45,10 +45,10 @@ alpha = np.array([1, 0, 0, 0, 0, 0])
 lambdas = np.array([.1, .5, 1, 2, 3, 4])
 step_size = 1/100;
 
-cv_risks, cv_lambdas, best_lambda = lnet.cross_validation(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
-B, intercept = lnet.fit(X = X_train, y = y_train, alpha = alpha, lambda_ = best_lambda, step_size = step_size)
+cv = lnet.LnetCV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
+pred = cv.predict(X = X_test)
 
-print("MSE on the test set: ", ((y_test - lnet.predict(X = X_test, intercept = intercept, B = B))**2).mean())
+print("MSE on the test set: ", ((y_test - pred)**2).mean())
 
-## MSE on the test set:  8.524780908593276e-06
+## MSE on the test set:  6.9760444370031585e-06
 ```
