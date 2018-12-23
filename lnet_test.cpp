@@ -45,6 +45,7 @@ void fit_test(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& 
   VectorXd B_0 = VectorXd::Zero(X_train.cols());
   FitType fit = fit_proximal_gradient_cd(B_0, X_train, y_train, alpha, lambda, step_size, max_iter, tolerance, random_seed);
 
+  cout << "\nConverged:" << fit.converged << "\n";
   cout << "\nB:\n" << fit.B << "\n";
   cout << "\nintercept:\n" << fit.intercept << "\n";
 
