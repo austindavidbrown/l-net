@@ -3,6 +3,7 @@
 develop:
 	clang++ -Wall -Wextra -std=c++17 -I./include/eigen/ lnet_test.cpp -O3 -march=native -mfpmath=sse -o lnet_test
 	./lnet_test
+	cp lnet.h ./python-package/lnet.h
 
 build_R:
 	R -f R_build.R

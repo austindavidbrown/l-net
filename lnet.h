@@ -11,6 +11,8 @@ using std::vector;
 using std::sort;
 using std::cout;
 
+// TODO add some success logic for CV
+
 // long double matrix, vector, scalar
 typedef long double ld;
 typedef Matrix<long double, Dynamic, Dynamic> MatrixXld;
@@ -209,7 +211,7 @@ CVType cross_validation_proximal_gradient_cd(const MatrixXd& X, const VectorXd& 
       y_test.row(i) = y.row(TEST[i]);
     }
 
-    // So the computation
+    // Do the computation
     const vector<FitType> fit_vector = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
     for (size_t l = 0; l < fit_vector.size(); l++) {
       const FitType fit = fit_vector.at(l);

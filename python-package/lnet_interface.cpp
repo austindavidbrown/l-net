@@ -60,11 +60,9 @@ static PyObject* python_fit(PyObject *self, PyObject *args, PyObject* kwargs) {
 
   // Fit
   const VectorXd B_0 = VectorXd::Zero(X.cols());
-  VectorXd B = proximal_gradient_cd(B_0, X, y, alpha, arg_lambda, arg_step_size, arg_max_iter, arg_tolerance, arg_random_seed);
-
-  // Compute intercept
-  const int n = X.rows();
-  const double intercept = 1/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
+  const FitType fit = fit_proximal_gradient_cd(B_0, X, y, alpha, arg_lambda, arg_step_size, arg_max_iter, arg_tolerance, arg_random_seed);
+  const VectorXd B = fit.B;
+  const double intercept = fit.intercept;
 
   //
   // Copy to Python
@@ -110,7 +108,7 @@ static PyObject* python_predict(PyObject *self, PyObject *args, PyObject* kwargs
   const Map<VectorXd> B(ptr_arg_B, nrow_B);
 
   // Predict
-  const VectorXd pred = predict(B, arg_intercept, X);
+  const VectorXd pred = predict(X, arg_intercept, B);
 
   //
   // Copy to Python
