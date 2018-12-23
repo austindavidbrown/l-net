@@ -290,22 +290,22 @@ typedef struct {
 
   VectorXd B;
   double intercept;
-} LnetObject;
+} PythonFitObject;
 
-static PyObject* Lnet_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-    LnetObject *self;
-    self = (LnetObject *) type->tp_alloc(type, 0);
+static PyObject* PythonFit_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+    PythonFitObject *self;
+    self = (PythonFitObject *) type->tp_alloc(type, 0);
     if (self != NULL) {
       // initialization goes here
     }
     return (PyObject *) self;
 }
 
-static void Lnet_dealloc(LnetObject *self) {
+static void PythonFit_dealloc(PythonFitObject *self) {
   Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
-static int python_Lnet_fit(LnetObject *self, PyObject *args, PyObject *kwargs) {
+static int PythonFit_fit(PythonFitObject *self, PyObject *args, PyObject *kwargs) {
   const char* keywords[] = {"X", "y", "alpha", "lambda_", 
                       "max_iter", "tolerance", "random_seed", NULL};
 
@@ -360,7 +360,7 @@ static int python_Lnet_fit(LnetObject *self, PyObject *args, PyObject *kwargs) {
   return 0;
 }
 
-static PyObject* python_Lnet_coeff(LnetObject *self, PyObject *Py_UNUSED(ignored)) { 
+static PyObject* PythonFit_coeff(PythonFitObject *self, PyObject *Py_UNUSED(ignored)) { 
   //
   // Copy to Python
   //
@@ -379,7 +379,7 @@ static PyObject* python_Lnet_coeff(LnetObject *self, PyObject *Py_UNUSED(ignored
                 "B", B_res);
 }
 
-static PyObject* python_Lnet_predict(LnetObject *self, PyObject *args, PyObject* kwargs) {
+static PyObject* PythonFit_predict(PythonFitObject *self, PyObject *args, PyObject* kwargs) {
   const char* keywords[] = {"X", NULL};
 
   // Required arguments
@@ -425,7 +425,7 @@ Lnet python class definition
 */
 
 // Documentation
-static const char* DOC_Lnet_fit = R"(
+static const char* DOC_PythonFit_init = R"(
 Lnet
  
 The \code{Lnet} class is used to fit a single regression model with a specified penalization. 
@@ -454,7 +454,7 @@ A class \code{Lnet}
 Zou, Hui. “Regularization and variable selection via the elastic net.” (2004).
 )";
 
-static const char* DOC_Lnet_predict = R"(
+static const char* DOC_PythonFit_predict = R"(
 Lnet Prediction
 
 The prediction function for \code{pros}.
@@ -466,34 +466,34 @@ The prediction function for \code{pros}.
 @return A \code{vector} of prediction values.
 )";
 
-static const char* DOC_Lnet_coeff = R"(
+static const char* DOC_PythonFit_coeff = R"(
 Lnet coeff
 
 Returns the coefficients.
 )";
 
-static PyMemberDef Lnet_members[] = {
+static PyMemberDef PythonFit_members[] = {
   {NULL}  /* Sentinel */
 };
 
-static PyMethodDef Lnet_methods[] = {
-  {"coeff", reinterpret_cast<PyCFunction>(python_Lnet_coeff), METH_NOARGS, DOC_Lnet_coeff},
-  {"predict", reinterpret_cast<PyCFunction>(python_Lnet_predict), METH_VARARGS|METH_KEYWORDS, DOC_Lnet_predict},
+static PyMethodDef PythonFit_methods[] = {
+  {"coeff", reinterpret_cast<PyCFunction>(PythonFit_coeff), METH_NOARGS, DOC_PythonFit_coeff},
+  {"predict", reinterpret_cast<PyCFunction>(PythonFit_predict), METH_VARARGS|METH_KEYWORDS, DOC_PythonFit_predict},
   {NULL}  /* Sentinel */
 };
 
-static PyTypeObject LnetType = {
+static PyTypeObject PythonFitType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "Lnet",
-    .tp_doc = DOC_Lnet_fit,
-    .tp_basicsize = sizeof(LnetObject),
+    .tp_doc = DOC_PythonFit_init,
+    .tp_basicsize = sizeof(PythonFitObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_new = Lnet_new,
-    .tp_init = (initproc) python_Lnet_fit,
-    .tp_dealloc = (destructor) Lnet_dealloc,
-    .tp_members = Lnet_members,
-    .tp_methods = Lnet_methods,
+    .tp_new = PythonFit_new,
+    .tp_init = (initproc) PythonFit_fit,
+    .tp_dealloc = (destructor) PythonFit_dealloc,
+    .tp_members = PythonFit_members,
+    .tp_methods = PythonFit_methods,
 };
 
 
@@ -524,7 +524,7 @@ PyMODINIT_FUNC PyInit_lnet(void) {
   PyObject *m;
   import_array(); // Numpy requirement
 
-  if (PyType_Ready(&LnetType) < 0) {
+  if (PyType_Ready(&PythonFitType) < 0) {
     return NULL;
   }
 
@@ -537,8 +537,8 @@ PyMODINIT_FUNC PyInit_lnet(void) {
     return NULL;
   }
 
-  Py_INCREF(&LnetType);
-  PyModule_AddObject(m, "Lnet", reinterpret_cast<PyObject*>(&LnetType));
+  Py_INCREF(&PythonFitType);
+  PyModule_AddObject(m, "Fit", reinterpret_cast<PyObject*>(&PythonFitType));
 
   Py_INCREF(&LnetCVType);
   PyModule_AddObject(m, "LnetCV", reinterpret_cast<PyObject*>(&LnetCVType));

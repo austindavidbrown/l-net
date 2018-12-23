@@ -36,7 +36,7 @@ random_seed = 777;
 ###
 # Single fit test
 ###
-fit = lnet.Lnet(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_)
+fit = lnet.Fit(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_)
 print("Test MSE:", ((y_test - fit.predict(X = X_test))**2).mean())
 
 ###
