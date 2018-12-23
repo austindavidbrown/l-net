@@ -46,8 +46,19 @@ lambdas = np.array([.1, .5, 1, 2, 3, 4])
 
 cv = lnet.CV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas)
 pred = cv.predict(X = X_test)
+```
+
+Get the MSE on the test set
+
+```python
 
 print("MSE on the test set: ", ((y_test - pred)**2).mean())
 
 ## MSE on the test set:  4.862122178906339e-06
+```
+
+Access the coefficients
+
+```python
+print("The cofficients: ", fit.coeff())
 ```

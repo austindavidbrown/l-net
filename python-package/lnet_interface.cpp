@@ -263,7 +263,7 @@ static PyMethodDef LnetCV_methods[] = {
 
 static PyTypeObject LnetCVType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "LnetCV",
+    .tp_name = "lnet.CV",
     .tp_doc = DOC_LnetCV_fit,
     .tp_basicsize = sizeof(LnetCVObject),
     .tp_itemsize = 0,
@@ -479,7 +479,7 @@ static PyMethodDef LnetFit_methods[] = {
 
 static PyTypeObject LnetFitType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "Lnet",
+    .tp_name = "lnet.Fit",
     .tp_doc = DOC_LnetFit_init,
     .tp_basicsize = sizeof(LnetFitObject),
     .tp_itemsize = 0,
