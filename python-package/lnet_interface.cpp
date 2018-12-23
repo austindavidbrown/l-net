@@ -37,7 +37,6 @@ typedef struct {
   MatrixXd X;
   VectorXd y;
   Vector6d alpha;
-  double step_size;
 
   int K_fold;
   int max_iter;
@@ -50,10 +49,9 @@ static PyObject* LnetCV_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
     self = (LnetCVObject *) type->tp_alloc(type, 0);
     if (self != NULL) {
       // Set default values
-      self->step_size = .001;
       self->K_fold = 10;
       self->max_iter = 10000;
-      self->tolerance = pow(10, -8);
+      self->tolerance = pow(10, -6);
       self->random_seed = 0;
     }
     return (PyObject *) self;
@@ -65,7 +63,7 @@ static void LnetCV_dealloc(LnetCVObject *self) {
 
 static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, PyObject* kwargs) {
   const char* keywords[] = {"X", "y", "alpha", "lambdas", 
-                            "step_size", "K_fold", "max_iter", "tolerance", "random_seed", NULL};
+                            "K_fold", "max_iter", "tolerance", "random_seed", NULL};
 
   // Required arguments
   PyArrayObject* arg_y = NULL;
@@ -74,9 +72,9 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   PyArrayObject* arg_lambdas = NULL;
 
   // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!O!|diidi", (char**) keywords,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!O!|iidi", (char**) keywords,
                         &PyArray_Type, &arg_X, &PyArray_Type, &arg_y,
-                        &PyArray_Type, &arg_alpha, &PyArray_Type, &arg_lambdas, &(self->step_size), 
+                        &PyArray_Type, &arg_alpha, &PyArray_Type, &arg_lambdas, 
                         &(self->K_fold), &(self->max_iter), &(self->tolerance), &(self->random_seed))) {
     return -1;
   }
@@ -116,7 +114,7 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   self->alpha = alpha;
 
   // CV
-  CVType cv = cross_validation_proximal_gradient_cd(self->X, self->y, self->K_fold, self->alpha, lambdas, self->step_size, self->max_iter, self->tolerance, self->random_seed);
+  CVType cv = cross_validation_proximal_gradient(self->X, self->y, self->K_fold, self->alpha, lambdas, self->max_iter, self->tolerance, self->random_seed);
 
   // Get location of best lambda
   MatrixXf::Index min_row;
@@ -183,7 +181,7 @@ static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObj
 
   // Fit
   const VectorXd B_0 = VectorXd::Zero(self->X.cols());
-  const FitType fit = fit_proximal_gradient_cd(B_0, self->X, self->y, self->alpha, self->best_lambda, self->step_size, self->max_iter, self->tolerance, self->random_seed);
+  const FitType fit = fit_proximal_gradient(B_0, self->X, self->y, self->alpha, self->best_lambda, self->max_iter, self->tolerance);
 
   // Predict
   const VectorXd pred = predict(X, fit.intercept, fit.B);
@@ -226,7 +224,6 @@ The \code{LnetCV} function is used for K-fold cross-validation.
 }
 @param K_fold is the number of folds in cross-validation.
 @param lambdas is a vector of dual penalization values to be evaluated.
-@param step_size is a tuning parameter defining the step size. Larger values are more aggressive and smaller values are less aggressive.
 @param max_iter is the maximum iterations the algorithm will run regardless of convergence.
 @param tolerance is the accuracy of the stopping criterion.
 @param random_seed is the random seed used in the algorithms.
@@ -282,7 +279,7 @@ static PyTypeObject LnetCVType = {
 
 /*
 
-Lnet python class
+Lnet python Fit class
 
 */
 typedef struct {
@@ -316,14 +313,13 @@ static int LnetFit_fit(LnetFitObject *self, PyObject *args, PyObject *kwargs) {
   double arg_lambda;
 
   // Optional arguments
-  double arg_step_size = .001;
   int arg_max_iter = 10000;
-  double arg_tolerance = pow(10, -8);
+  double arg_tolerance = pow(10, -6);
   int arg_random_seed = 0;
 
   // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!d|didi", (char**) keywords,
-                        &PyArray_Type, &arg_X, &PyArray_Type, &arg_y,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!d|idi", (char**) keywords,
+                        &PyArray_Type, &arg_X, &PyArray_Type, &arg_y, 
                         &PyArray_Type, &arg_alpha, &arg_lambda, 
                         &arg_max_iter, &arg_tolerance, &arg_random_seed)) {
     return -1;
@@ -351,7 +347,7 @@ static int LnetFit_fit(LnetFitObject *self, PyObject *args, PyObject *kwargs) {
 
   // Fit
   const VectorXd B_0 = VectorXd::Zero(X.cols());
-  const FitType fit = fit_proximal_gradient_cd(B_0, X, y, alpha, arg_lambda, arg_step_size, arg_max_iter, arg_tolerance, arg_random_seed);
+  const FitType fit = fit_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
 
   // Assign to the class
   self->B = fit.B;
@@ -442,7 +438,6 @@ The \code{Lnet} class is used to fit a single regression model with a specified 
   \item \eqn{\alpha_6} is the \eqn{l^{10}} penalty.
 }
 @param lambda is the Lagrangian dual penalization parameter.
-@param step_size is a tuning parameter defining the step size. Larger values are more aggressive and smaller values are less aggressive.
 @param max_iter is the maximum iterations the algorithm will run regardless of convergence.
 @param tolerance is the accuracy of the stopping criterion.
 @param random_seed is the random seed used in the algorithms.

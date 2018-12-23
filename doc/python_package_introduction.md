@@ -43,12 +43,11 @@ import lnet as lnet
 
 alpha = np.array([1, 0, 0, 0, 0, 0])
 lambdas = np.array([.1, .5, 1, 2, 3, 4])
-step_size = 1/100;
 
-cv = lnet.LnetCV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
+cv = lnet.CV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas)
 pred = cv.predict(X = X_test)
 
 print("MSE on the test set: ", ((y_test - pred)**2).mean())
 
-## MSE on the test set:  6.9760444370031585e-06
+## MSE on the test set:  4.862122178906339e-06
 ```

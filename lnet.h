@@ -16,6 +16,7 @@ using std::sort;
 using std::cout;
 
 // TODO add some convergence logic?
+// TODO look into stopping criterion
 
 // long double matrix, vector, scalar
 typedef long double ld;

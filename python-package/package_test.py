@@ -25,23 +25,19 @@ X_train, y_train = X[TRAIN, :], y[TRAIN]
 X_test, y_test = X[TEST, :], y[TEST]
 
 alpha = np.array([1, 0, 0, 0, 0, 0])
-lambda_ = 1;
-lambdas = np.array([.1, .5, 1, 2, 3, 4])
-
-K_fold = 10;
-max_iter = 1000;
-tolerance = 10**(-8);
-random_seed = 777;
 
 ###
 # Single fit test
 ###
+lambda_ = 1;
 fit = lnet.Fit(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_)
 print("Test MSE:", ((y_test - fit.predict(X = X_test))**2).mean())
 
 ###
 # CV test
 ###
+lambdas = np.array([.1, .5, 1, 2, 3, 4])
+K_fold = 10;
 cv = lnet.CV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas)
 print("CV Test MSE:", ((y_test - cv.predict(X = X_test))**2).mean())
 
