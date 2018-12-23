@@ -1,3 +1,7 @@
+/*
+Testing for lnet
+*/
+
 #include "lnet.h"
 
 #include <time.h>
@@ -6,10 +10,6 @@
 #include <iomanip>
 
 using std::cout;
-
-//
-// Test
-//
 
 // CV parser
 template<typename M>
@@ -34,7 +34,6 @@ M load_csv (const std::string & path) {
 // Testing functions
 //
 
-// test fit
 void test_fit_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, double lambda, double step_size) {
   cout << R"(
   Fit test
@@ -56,7 +55,6 @@ void test_fit_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixX
   cout << "\nTest MSE: " << mean_squared_error(y_test, predict(X_test, fit.intercept, fit.B)) << "\n";
 }
 
-// test warm start
 void test_fit_warm_start_proximal_gradient_cd(MatrixXd& X, VectorXd& y, Vector6d alpha, vector<double> lambdas, double step_size) {
   cout << "\nWarm start test\n";
 
@@ -70,7 +68,6 @@ void test_fit_warm_start_proximal_gradient_cd(MatrixXd& X, VectorXd& y, Vector6d
   cout << "\nlast fit B:\n" << last_fit.B << "\n";
 }
 
-// test cross validation
 void test_cross_validation_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, vector<double> lambdas, double step_size, int K_fold) {
   cout << R"(
   CV test
