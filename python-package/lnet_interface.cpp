@@ -21,7 +21,6 @@ Reference:
 
 using namespace Eigen;
 using std::vector;
-using std::string;
 using std::cout;
 
 
@@ -189,7 +188,7 @@ static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObj
   const VectorXd pred = predict(X, fit.intercept, fit.B);
 
   //
-  // Copy to Python
+  // Copy to Pythonc
   //
   long res_dims[1];
   res_dims[0] = pred.rows();
