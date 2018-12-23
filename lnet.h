@@ -121,26 +121,25 @@ VectorXd fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const 
   return B;
 }
 
-// Returns a matrix of B
+// Returns a vector of B corresponding to lambdas using warm-start.
 // We do not sort the lambdas here, they are ordered how you want them
-MatrixXd fit_warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
+vector<VectorXd> fit_warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
                                          const Vector6d& alpha, const vector<double>& lambdas, const double step_size,
                                          const int max_iter, const double tolerance, const int random_seed) {
-  int p = X.cols();
-  int L = lambdas.size();
-  MatrixXd B_matrix = MatrixXd::Zero(L, p);
+  const int p = X.cols();
+  const int L = lambdas.size();
+  vector<VectorXd> B_vector;
 
   // do the first one normally
   VectorXd B_0 = VectorXd::Zero(p);
-  B_matrix.row(0) = fit_proximal_gradient_cd(B_0, X, y, alpha, lambdas[0], step_size, max_iter, tolerance, random_seed);
+  B_vector.push_back(fit_proximal_gradient_cd(B_0, X, y, alpha, lambdas[0], step_size, max_iter, tolerance, random_seed));
 
   // Warm start after the first one
   for (int l = 1; l < L; l++) {
-    VectorXd B_warm = B_matrix.row((l - 1)); // warm start
-    B_matrix.row(l) = fit_proximal_gradient_cd(B_warm, X, y, alpha, lambdas[l], step_size, max_iter, tolerance, random_seed);
+    VectorXd B_warm = B_vector.at(l - 1); // warm start
+    B_vector.push_back(fit_proximal_gradient_cd(B_warm, X, y, alpha, lambdas[l], step_size, max_iter, tolerance, random_seed));
   }
-
-  return B_matrix;
+  return B_vector;
 }
 
 // Prox Gradient Cross Validation
@@ -195,10 +194,10 @@ CVType cross_validation_proximal_gradient_cd(const MatrixXd& X, const VectorXd& 
       y_test.row(i) = y.row(TEST[i]);
     }
 
-    // do the computation
-    MatrixXd B_matrix = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
-    for (int l = 0; l < L; l++) {
-      VectorXd B = B_matrix.row(l).transpose();
+    // So the computation
+    const vector<VectorXd> B_vector = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
+    for (size_t l = 0; l < B_vector.size(); l++) {
+      const VectorXd B = B_vector.at(l);
 
       // compute the intercept
       int n = X_train.rows();

@@ -78,8 +78,8 @@ void test_prostate() {
   // Warm start test
   //
   cout << "\nWarm start test\n";
-  MatrixXd B_matrix = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
-  cout << "\nB Matrix last:\n" << B_matrix.row(B_matrix.rows() - 1).transpose() << "\n";
+  vector<VectorXd> B_vector = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
+  cout << "\nB Vector last:\n" << B_vector.at(B_vector.size() - 1) << "\n";
 
   //
   // CV test
@@ -151,8 +151,8 @@ void test_prox() {
   // Warm start test
   //
   cout << "\nWarm start test\n";
-  MatrixXd B_matrix = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
-  cout << "\nB Matrix last:\n" << B_matrix.row(B_matrix.rows() - 1).transpose() << "\n";
+  vector<VectorXd> B_vector = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
+  cout << "\nB Vector last:\n" << B_vector.at(B_vector.size() - 1) << "\n";
 
   //
   // CV test
