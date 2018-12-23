@@ -50,6 +50,7 @@ static PyObject* LnetCV_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
     self = (LnetCVObject *) type->tp_alloc(type, 0);
     if (self != NULL) {
       // Set default values
+      self->step_size = .001;
       self->K_fold = 10;
       self->max_iter = 10000;
       self->tolerance = pow(10, -8);
@@ -63,8 +64,8 @@ static void LnetCV_dealloc(LnetCVObject *self) {
 }
 
 static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, PyObject* kwargs) {
-  char* keywords[] = {"X", "y", "alpha", "lambdas", "step_size", 
-                      "K_fold", "max_iter", "tolerance", "random_seed", NULL};
+  const char* keywords[] = {"X", "y", "alpha", "lambdas", 
+                            "step_size", "K_fold", "max_iter", "tolerance", "random_seed", NULL};
 
   // Required arguments
   PyArrayObject* arg_y = NULL;
@@ -73,7 +74,7 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   PyArrayObject* arg_lambdas = NULL;
 
   // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!O!d|iidi", keywords,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!O!|diidi", (char**) keywords,
                         &PyArray_Type, &arg_X, &PyArray_Type, &arg_y,
                         &PyArray_Type, &arg_alpha, &PyArray_Type, &arg_lambdas, &(self->step_size), 
                         &(self->K_fold), &(self->max_iter), &(self->tolerance), &(self->random_seed))) {
@@ -160,13 +161,13 @@ static PyObject* python_LnetCV_data(LnetCVObject *self, PyObject *Py_UNUSED(igno
 }
 
 static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObject* kwargs) {
-  char* keywords[] = {"X", NULL};
+  const char* keywords[] = {"X", NULL};
 
   // Required arguments
   PyArrayObject* arg_X = NULL;
 
   // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", keywords, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", (char**) keywords, 
                                    &PyArray_Type, &arg_X)) {
     return NULL;
   }
@@ -305,7 +306,7 @@ static void Lnet_dealloc(LnetObject *self) {
 }
 
 static int python_Lnet_fit(LnetObject *self, PyObject *args, PyObject *kwargs) {
-  char* keywords[] = {"X", "y", "alpha", "lambda_", "step_size", 
+  const char* keywords[] = {"X", "y", "alpha", "lambda_", 
                       "max_iter", "tolerance", "random_seed", NULL};
 
   // Required arguments
@@ -313,17 +314,17 @@ static int python_Lnet_fit(LnetObject *self, PyObject *args, PyObject *kwargs) {
   PyArrayObject* arg_X = NULL;
   PyArrayObject* arg_alpha = NULL;
   double arg_lambda;
-  double arg_step_size;
 
-  // Arguments with default values
+  // Optional arguments
+  double arg_step_size = .001;
   int arg_max_iter = 10000;
   double arg_tolerance = pow(10, -8);
   int arg_random_seed = 0;
 
   // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!dd|idi", keywords,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!d|didi", (char**) keywords,
                         &PyArray_Type, &arg_X, &PyArray_Type, &arg_y,
-                        &PyArray_Type, &arg_alpha, &arg_lambda, &arg_step_size, 
+                        &PyArray_Type, &arg_alpha, &arg_lambda, 
                         &arg_max_iter, &arg_tolerance, &arg_random_seed)) {
     return -1;
   }
@@ -379,13 +380,13 @@ static PyObject* python_Lnet_coeff(LnetObject *self, PyObject *Py_UNUSED(ignored
 }
 
 static PyObject* python_Lnet_predict(LnetObject *self, PyObject *args, PyObject* kwargs) {
-  char* keywords[] = {"X", NULL};
+  const char* keywords[] = {"X", NULL};
 
   // Required arguments
   PyArrayObject* arg_X = NULL;
 
   // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", keywords, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", (char**) keywords, 
                                    &PyArray_Type, &arg_X)) {
     return NULL;
   }

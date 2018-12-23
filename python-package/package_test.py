@@ -7,26 +7,26 @@ import lnet
 n = 100
 p = 5
 
-A = np.array(np.repeat(3, p - int(1/2 * p))) # nonzero features
-B_true = np.append(A, np.zeros(p - len(A))) # add sparsity
-intercept_true = 5
+SPLIT_RATIO = .8
+SPARSITY_LEVEL = p // 2
 
-X_train = np.zeros((n, p))
+B = np.repeat(3, p)
+B[np.random.choice(p, SPARSITY_LEVEL, replace = False)] = 0 # sparsify
+intercept = 5
+
+X = np.zeros((n, p))
 for i in range(0, n):
-  X_train[i, :] = np.random.multivariate_normal(np.zeros(p), np.identity(p))
-y_train = np.repeat(intercept_true, n) + X_train @ B_true
+  X[i, :] = np.random.multivariate_normal(np.zeros(p), np.identity(p))
+y = np.repeat(intercept, n) + X @ B
 
-n_test = int(n/3)
-X_test = np.zeros((n_test, p))
-for i in range(0, n_test):
-  X_test[i, :] = np.random.multivariate_normal(np.zeros(p), np.identity(p))
-y_test = np.repeat(intercept_true, n_test) + (X_test @ B_true)
-
+TRAIN = np.arange(0, int(np.floor(SPLIT_RATIO * n)))
+TEST = np.arange(int(np.floor(SPLIT_RATIO * n)), n)
+X_train, y_train = X[TRAIN, :], y[TRAIN]
+X_test, y_test = X[TEST, :], y[TEST]
 
 alpha = np.array([1, 0, 0, 0, 0, 0])
 lambda_ = 1;
 lambdas = np.array([.1, .5, 1, 2, 3, 4])
-step_size = 1/100;
 
 K_fold = 10;
 max_iter = 1000;
@@ -36,13 +36,13 @@ random_seed = 777;
 ###
 # Single fit test
 ###
-fit = lnet.Lnet(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_, step_size = step_size)
+fit = lnet.Lnet(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_)
 print("Test MSE:", ((y_test - fit.predict(X = X_test))**2).mean())
 
 ###
 # CV test
 ###
-cv = lnet.LnetCV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
+cv = lnet.LnetCV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas)
 print("CV Test MSE:", ((y_test - cv.predict(X = X_test))**2).mean())
 
 ###
