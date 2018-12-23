@@ -43,9 +43,10 @@ print(fit.coeff())
 ###
 # CV test
 ###
-cv = lnet.cross_validation(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
-best_lambda = cv["best_lambda"]
+cv = lnet.LnetCV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
+print(cv.data())
 
+best_lambda = cv.data()["best_lambda"]
 best_fit = lnet.Lnet(X = X_train, y = y_train, alpha = alpha, lambda_ = best_lambda, step_size = step_size)
 print("mse:", ((y_test - best_fit.predict(X = X_test))**2).mean())
 

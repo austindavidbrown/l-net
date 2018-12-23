@@ -2,6 +2,8 @@
 Refer to this documentation: https://docs.python.org/3/extending/newtypes_tutorial.html
 */
 
+// TODO document
+
 #include <math.h>
 #include <vector>
 #include <iostream>
@@ -19,7 +21,31 @@ using namespace Eigen;
 using std::cout;
 using std::vector;
 
-static PyObject* python_cross_validation(PyObject *self, PyObject *args, PyObject* kwargs) {
+/*
+LnetCV python class
+*/
+typedef struct {
+  PyObject_HEAD
+
+  double best_lambda;
+  VectorXd risks;
+  vector<double> lambdas;
+} LnetCVObject;
+
+static PyObject* LnetCV_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+    LnetCVObject *self;
+    self = (LnetCVObject *) type->tp_alloc(type, 0);
+    if (self != NULL) {
+      // initialization goes here
+    }
+    return (PyObject *) self;
+}
+
+static void LnetCV_dealloc(LnetCVObject *self) {
+  Py_TYPE(self)->tp_free((PyObject *) self);
+}
+
+static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, PyObject* kwargs) {
   char* keywords[] = {"X", "y", "alpha", "lambdas", "step_size", 
                       "K_fold", "max_iter", "tolerance", "random_seed", NULL};
 
@@ -41,7 +67,7 @@ static PyObject* python_cross_validation(PyObject *self, PyObject *args, PyObjec
                         &PyArray_Type, &arg_X, &PyArray_Type, &arg_y,
                         &PyArray_Type, &arg_alpha, &PyArray_Type, &arg_lambdas, &arg_step_size, 
                         &arg_K_fold, &arg_max_iter, &arg_tolerance, &arg_random_seed)) {
-    return NULL;
+    return -1;
   }
 
   // Handle X argument
@@ -79,45 +105,72 @@ static PyObject* python_cross_validation(PyObject *self, PyObject *args, PyObjec
   // Get location of best lambda
   MatrixXf::Index min_row;
   cv.risks.minCoeff(&min_row);
-  double best_lambda = cv.lambdas[min_row];
 
-  // TODO implement
 
+  // Set to class
+  self->best_lambda = cv.lambdas[min_row];
+  self->risks = cv.risks;
+  self->lambdas = cv.lambdas;
+
+  return 0;
+}
+
+static PyObject* python_LnetCV_data(LnetCVObject *self, PyObject *Py_UNUSED(ignored)) { 
   //
   // Copy to Python
   //
   // Copy risks
   long res_risks_dims[1];
-  res_risks_dims[0] = cv.risks.rows();
+  res_risks_dims[0] = self->risks.rows();
   PyArrayObject* res_risks = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_risks_dims, NPY_DOUBLE));
   double* ptr_res_risks = (reinterpret_cast<double*>(res_risks->data));
 
-  for (int i = 0; i < cv.risks.rows(); i++) {
-    ptr_res_risks[i] = cv.risks(i);
+  for (int i = 0; i < self->risks.rows(); i++) {
+    ptr_res_risks[i] = self->risks(i);
   }
 
   // Copy lambdas
   long res_lambdas_dims[1];
-  res_lambdas_dims[0] = cv.lambdas.size();
+  res_lambdas_dims[0] = self->lambdas.size();
   PyArrayObject* res_lambdas = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_lambdas_dims, NPY_DOUBLE));
   double* ptr_res_lambdas = (reinterpret_cast<double*>(res_lambdas->data));
 
-  for (size_t i = 0; i < cv.lambdas.size(); i++) {
-    ptr_res_lambdas[i] = cv.lambdas[i];
+  for (size_t i = 0; i < self->lambdas.size(); i++) {
+    ptr_res_lambdas[i] = self->lambdas[i];
   }
 
   // return dictionary
   return Py_BuildValue("{s:O, s:O, s:d}",
-                "cv_risks", res_risks, 
-                "cv_lambdas", res_lambdas,
-                "best_lambda", best_lambda);
+                "risks", res_risks, 
+                "lambdas", res_lambdas,
+                "best_lambda", self->best_lambda);
 }
 
+/*
+LnetCV python class definition
+*/
+static PyMemberDef LnetCV_members[] = {
+  {NULL}  /* Sentinel */
+};
 
+static PyMethodDef LnetCV_methods[] = {
+  {"data", reinterpret_cast<PyCFunction>(python_LnetCV_data), METH_NOARGS, "doc string"},
+  {NULL}  /* Sentinel */
+};
 
-
-
-
+static PyTypeObject LnetCVType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "LnetCV",
+    .tp_doc = "doc string",
+    .tp_basicsize = sizeof(LnetCVObject),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_new = LnetCV_new,
+    .tp_init = (initproc) python_LnetCV_cross_validation,
+    .tp_dealloc = (destructor) LnetCV_dealloc,
+    .tp_members = LnetCV_members,
+    .tp_methods = LnetCV_methods,
+};
 
 
 
@@ -289,7 +342,6 @@ static PyTypeObject LnetType = {
 lnet python module definition
 */
 static PyMethodDef lnet_methods[] = {
-    {"cross_validation", reinterpret_cast<PyCFunction>(python_cross_validation), METH_VARARGS|METH_KEYWORDS, "doc string"},
     {NULL, NULL, 0, NULL},
 };
 
@@ -309,6 +361,10 @@ PyMODINIT_FUNC PyInit_lnet(void) {
     return NULL;
   }
 
+  if (PyType_Ready(&LnetCVType) < 0) {
+    return NULL;
+  }
+
   m = PyModule_Create(&lnet_module);
   if (m == NULL) {
     return NULL;
@@ -316,5 +372,8 @@ PyMODINIT_FUNC PyInit_lnet(void) {
 
   Py_INCREF(&LnetType);
   PyModule_AddObject(m, "Lnet", reinterpret_cast<PyObject*>(&LnetType));
+
+  Py_INCREF(&LnetCVType);
+  PyModule_AddObject(m, "LnetCV", reinterpret_cast<PyObject*>(&LnetCVType));
   return m;
 }
