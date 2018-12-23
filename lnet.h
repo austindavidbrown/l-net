@@ -15,7 +15,7 @@ using std::vector;
 using std::sort;
 using std::cout;
 
-// TODO add some success logic for CV
+// TODO add some convergence logic?
 
 // long double matrix, vector, scalar
 typedef long double ld;
@@ -25,8 +25,6 @@ typedef Matrix<long double, Dynamic, 1> VectorXld;
 typedef Matrix<double, 6, 1> Vector6d;
 
 struct FitType {
-  bool converged;
-
   double intercept;
   VectorXd B;
 };
@@ -140,7 +138,6 @@ FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const Vect
       const double intercept = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
       // Build return value
       FitType fit;
-      fit.converged = true;
       fit.intercept = intercept;
       fit.B = B;
       return fit;
@@ -151,7 +148,6 @@ FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const Vect
   const double intercept = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
   // Build return value
   FitType fit;
-  fit.converged = false;
   fit.intercept = intercept;
   fit.B = B;
   return fit;
@@ -301,7 +297,6 @@ FitType fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const V
       const double intercept = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
       // Build return value
       FitType fit;
-      fit.converged = true;
       fit.intercept = intercept;
       fit.B = B;
       return fit;
@@ -312,7 +307,6 @@ FitType fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const V
   // Build return value
   const double intercept = 1/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
   FitType fit;
-  fit.converged = false;
   fit.intercept = intercept;
   fit.B = B;
   return fit;

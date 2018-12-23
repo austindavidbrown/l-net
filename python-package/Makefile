@@ -12,5 +12,3 @@ python_setup:
 
 build_docs:
 	./env/bin/python3 -m pydoc -w lnet
-	./env/bin/python3 -m pydoc -w lnet.Lnet
-	./env/bin/python3 -m pydoc -w lnet.LnetCV
