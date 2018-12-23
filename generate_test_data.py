@@ -22,8 +22,8 @@ X_train, y_train = X[TRAIN, :], y[TRAIN]
 X_test, y_test = X[TEST, :], y[TEST]
 
 # Save to file
-np.savetxt("X_train.csv", np.asarray(X_train), delimiter=",")
-np.savetxt("y_train.csv", np.asarray(y_train), delimiter=",")
+np.savetxt("data/X_train.csv", np.asarray(X_train), delimiter=",")
+np.savetxt("data/y_train.csv", np.asarray(y_train), delimiter=",")
 
-np.savetxt("X_test.csv", np.asarray(X_test), delimiter=",")
-np.savetxt("y_test.csv", np.asarray(y_test), delimiter=",")
+np.savetxt("data/X_test.csv", np.asarray(X_test), delimiter=",")
+np.savetxt("data/y_test.csv", np.asarray(y_test), delimiter=",")

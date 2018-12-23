@@ -36,7 +36,10 @@ M load_csv (const std::string & path) {
 
 // test fit
 void fit_test(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, double lambda, double step_size) {
-  cout << "\nFit test\n";
+  cout << R"(
+  Fit test
+  -------
+  )";
 
   int max_iter = 10000;
   double tolerance = pow(10, -8);
@@ -69,7 +72,10 @@ void warm_start_test(MatrixXd& X, VectorXd& y, Vector6d alpha, vector<double> la
 
 // test cross validation
 void cv_test(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, vector<double> lambdas, double step_size, int K_fold) {
-  cout << "\nCV test\n";
+  cout << R"(
+  CV test
+  -------
+  )";
 
   int max_iter = 10000;
   double tolerance = pow(10, -8);
@@ -95,42 +101,33 @@ void cv_test(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y
   cout << "\nTest MSE: " << mean_squared_error(y_test, predict(X_test, best_fit.intercept, best_fit.B)) << "\n";
 }
 
-void test_prostate() {
-  MatrixXd X_train = load_csv<MatrixXd>("data/prostate_X_train.csv");
-  VectorXd y_train = load_csv<MatrixXd>("data/prostate_y_train.csv");
+// Benchmark for compiler optimization
+void bench() {
+  MatrixXf a = MatrixXf::Random(5000, 5000);
+  MatrixXf b = MatrixXf::Random(5000, 5000);
+  time_t start = clock();
+  MatrixXf c = a * b;
+  std::cout << (double)(clock() - start) / CLOCKS_PER_SEC * 1000 << "ms" << std::endl;
+}
 
-  MatrixXd X_test = load_csv<MatrixXd>("data/prostate_X_test.csv");
-  VectorXd y_test = load_csv<MatrixXd>("data/prostate_y_test.csv");
+// Random number generator test
+void test_random_gen() {
+  int n = 10;
+  vector<int> I(n);
+  std::iota (std::begin(I), std::end(I), 0);
+  std::random_device rd;
+  cout << rd();
+  std::seed_seq random_seed{rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd()};
+  std::mt19937_64 rng(random_seed);
+  time_t start = clock();
+  std::shuffle(std::begin(I), std::end(I), rng); // permute
+  std::cout << (double)(clock() - start) / CLOCKS_PER_SEC * 1000 << "ms" << std::endl;
 
-  // create alpha
-  double alpha_data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-  Map<Vector6d> alpha(alpha_data);
-
-  double step_size = 1.0f/((double) 80);
-
-  //
-  // fit test
-  //
-  double lambda = 11;
-  fit_test(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
-
-  //
-  // warm start test
-  //
-  // Create lambdas
-  vector<double> lambdas;
-  lambdas.push_back(X_train.cols());
-  for (int i = 1; i < 100; i++) {
-    lambdas.push_back(lambdas[i - 1] + .1);
+  cout << "\n";
+  for (auto& i : I) {
+    cout << i << " ";
   }
-
-  warm_start_test(X_train, y_train, alpha, lambdas, step_size);
-
-  //
-  // cv test
-  //
-  int K_fold = 10;
-  cv_test(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
+  cout << "\n";
 }
 
 void test_prox() {
@@ -171,38 +168,48 @@ void test_prox() {
   cv_test(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
 }
 
-// Benchmark for compiler optimization
-void bench() {
-  MatrixXf a = MatrixXf::Random(5000, 5000);
-  MatrixXf b = MatrixXf::Random(5000, 5000);
-  time_t start = clock();
-  MatrixXf c = a * b;
-  std::cout << (double)(clock() - start) / CLOCKS_PER_SEC * 1000 << "ms" << std::endl;
-}
+void test_prostate() {
+  MatrixXd X_train = load_csv<MatrixXd>("data/prostate_X_train.csv");
+  VectorXd y_train = load_csv<MatrixXd>("data/prostate_y_train.csv");
 
-// Random number generator test
-void test_random_gen() {
-  int n = 10;
-  vector<int> I(n);
-  std::iota (std::begin(I), std::end(I), 0);
-  std::random_device rd;
-  cout << rd();
-  std::seed_seq random_seed{rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd()};
-  std::mt19937_64 rng(random_seed);
-  time_t start = clock();
-  std::shuffle(std::begin(I), std::end(I), rng); // permute
-  std::cout << (double)(clock() - start) / CLOCKS_PER_SEC * 1000 << "ms" << std::endl;
+  MatrixXd X_test = load_csv<MatrixXd>("data/prostate_X_test.csv");
+  VectorXd y_test = load_csv<MatrixXd>("data/prostate_y_test.csv");
 
-  cout << "\n";
-  for (auto& i : I) {
-    cout << i << " ";
+  // create alpha
+  double alpha_data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+  Map<Vector6d> alpha(alpha_data);
+
+  double step_size = 1.0f/((double) 80);
+
+  //
+  // fit test
+  //
+  double lambda = 11;
+  fit_test(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
+
+  //
+  // warm start test
+  //
+  // Create lambdas
+  vector<double> lambdas;
+  lambdas.push_back(X_train.cols());
+  for (int i = 1; i < 100; i++) {
+    lambdas.push_back(lambdas[i - 1] + .1);
   }
-  cout << "\n";
+
+  warm_start_test(X_train, y_train, alpha, lambdas, step_size);
+
+  //
+  // cv test
+  //
+  int K_fold = 10;
+  cv_test(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
 }
 
 int main() {
-  test_prostate();
   test_prox();
+  // test_prostate();
+
   // test_random_gen();
   // bench();
 }

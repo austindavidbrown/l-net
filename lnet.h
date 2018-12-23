@@ -12,6 +12,7 @@ using std::sort;
 using std::cout;
 
 // TODO add some success logic for CV
+// TODO add line search function
 
 // long double matrix, vector, scalar
 typedef long double ld;
