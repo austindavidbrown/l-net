@@ -36,7 +36,7 @@ M load_csv (const std::string & path) {
 
 void test_fit_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, double lambda, double step_size) {
   cout << R"(
-  Fit test
+  Test fit_proximal_gradient_cd
   -------
   )";
 
@@ -56,7 +56,10 @@ void test_fit_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixX
 }
 
 void test_fit_warm_start_proximal_gradient_cd(MatrixXd& X, VectorXd& y, Vector6d alpha, vector<double> lambdas, double step_size) {
-  cout << "\nWarm start test\n";
+  cout << R"(
+  Test fit_warm_start_proximal_gradient_cd
+  -------
+  )";
 
   int max_iter = 10000;
   double tolerance = pow(10, -8);
@@ -70,7 +73,7 @@ void test_fit_warm_start_proximal_gradient_cd(MatrixXd& X, VectorXd& y, Vector6d
 
 void test_cross_validation_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, vector<double> lambdas, double step_size, int K_fold) {
   cout << R"(
-  CV test
+  Test cross_validation_proximal_gradient_cd
   -------
   )";
 
