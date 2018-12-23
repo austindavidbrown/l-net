@@ -111,7 +111,7 @@ FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const Vect
     }
 
     // Line search
-    double h_j = 1; // initial step size
+    double h_j = .5; // initial step size
     bool line_searching = true;
     while (line_searching) {
       for (int i = 0; i < p; i++) {
