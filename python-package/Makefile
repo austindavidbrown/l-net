@@ -11,4 +11,6 @@ python_setup:
 	./env/bin/pip3 install numpy
 
 build_docs:
-	python -m pydoc -w ../docs/lnet_python
+	./env/bin/python3 -m pydoc -w lnet
+	./env/bin/python3 -m pydoc -w lnet.Lnet
+	./env/bin/python3 -m pydoc -w lnet.LnetCV
