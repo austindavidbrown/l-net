@@ -62,18 +62,22 @@ vector<vector<T>> partition(const vector<T>& S, const size_t n) {
   return partitions;
 }
 
+/*
 
-// Proximal Gradient Coordinate Descent
-/// =====================================================================================
+lnet
+
+*/
 
 VectorXd predict(const MatrixXd& X, const double intercept, const VectorXd& B) {
   const int n = X.rows();
   return intercept * VectorXd::Ones(n) + (X * B);
 }
 
-//
-// Proximal Gradient Coordinate Descent
-//
+/*
+
+Proximal Gradient Coordinate Descent
+
+*/
 FitType fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
                               const Vector6d& alpha, const double lambda, const double step_size,
                               const int max_iter, const double tolerance, const int random_seed) {
