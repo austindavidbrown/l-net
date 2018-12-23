@@ -4,7 +4,6 @@ Reference:
   PySys_WriteStdout(std::to_string(self->max_iter).c_str());
 */
 
-// TODO change ptr variables to data_ptr
 // Change self->X and the X in CV it is confusing
 
 #include <math.h>
@@ -84,32 +83,32 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
 
   // Handle X argument
   arg_X = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_X), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
+  double* data_ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
   const int nrow_X = (arg_X->dimensions)[0];
   const int ncol_X = (arg_X->dimensions)[1];
 
   // Handle y argument
   arg_y = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_y), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* ptr_arg_y = reinterpret_cast<double*>(arg_y->data);
+  double* data_ptr_arg_y = reinterpret_cast<double*>(arg_y->data);
   const int nrow_y = (arg_y->dimensions)[0];
 
   // Handle alpha argument
   arg_alpha = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_alpha), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* ptr_arg_alpha = reinterpret_cast<double*>(arg_alpha->data);
+  double* data_ptr_arg_alpha = reinterpret_cast<double*>(arg_alpha->data);
 
   // Handle lambdas argument
   arg_lambdas = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_lambdas), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* ptr_arg_lambdas = reinterpret_cast<double*>(arg_lambdas->data);
+  double* data_ptr_arg_lambdas = reinterpret_cast<double*>(arg_lambdas->data);
   const int nrow_lambdas = (arg_lambdas->dimensions)[0];
 
   // Build unordered lambdas
   vector<double> lambdas;
-  lambdas.assign(ptr_arg_lambdas, ptr_arg_lambdas + nrow_lambdas);
+  lambdas.assign(data_ptr_arg_lambdas, data_ptr_arg_lambdas + nrow_lambdas);
 
   // Setup
-  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(ptr_arg_X, nrow_X, ncol_X);
-  const Map<VectorXd> y(ptr_arg_y, nrow_y);
-  const Map<Vector6d> alpha(ptr_arg_alpha);
+  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
+  const Map<VectorXd> y(data_ptr_arg_y, nrow_y);
+  const Map<Vector6d> alpha(data_ptr_arg_alpha);
 
   // Assign to class
   self->X = X;
@@ -138,20 +137,20 @@ static PyObject* python_LnetCV_data(LnetCVObject *self, PyObject *Py_UNUSED(igno
   long res_risks_dims[1];
   res_risks_dims[0] = self->cv_risks.rows();
   PyArrayObject* res_risks = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_risks_dims, NPY_DOUBLE));
-  double* ptr_res_risks = (reinterpret_cast<double*>(res_risks->data));
+  double* data_ptr_res_risks = (reinterpret_cast<double*>(res_risks->data));
 
   for (int i = 0; i < self->cv_risks.rows(); i++) {
-    ptr_res_risks[i] = self->cv_risks(i);
+    data_ptr_res_risks[i] = self->cv_risks(i);
   }
 
   // Copy cv lambdas
   long res_lambdas_dims[1];
   res_lambdas_dims[0] = self->cv_lambdas.size();
   PyArrayObject* res_lambdas = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_lambdas_dims, NPY_DOUBLE));
-  double* ptr_res_lambdas = (reinterpret_cast<double*>(res_lambdas->data));
+  double* data_ptr_res_lambdas = (reinterpret_cast<double*>(res_lambdas->data));
 
   for (size_t i = 0; i < self->cv_lambdas.size(); i++) {
-    ptr_res_lambdas[i] = self->cv_lambdas[i];
+    data_ptr_res_lambdas[i] = self->cv_lambdas[i];
   }
 
   // return dictionary
@@ -175,12 +174,12 @@ static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObj
 
   // Handle X argument
   arg_X = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_X), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
+  double* data_ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
   const int nrow_X = (arg_X->dimensions)[0];
   const int ncol_X = (arg_X->dimensions)[1];
 
   // Setup
-  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(ptr_arg_X, nrow_X, ncol_X);
+  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
 
   // Fit
   const VectorXd B_0 = VectorXd::Zero(self->X.cols());
@@ -195,10 +194,10 @@ static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObj
   long res_dims[1];
   res_dims[0] = pred.rows();
   PyArrayObject* res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_dims, NPY_DOUBLE)); // 1 is for vector
-  double* ptr_res_data = (reinterpret_cast<double*>(res->data));
+  double* data_ptr_res_data = (reinterpret_cast<double*>(res->data));
 
   for (int i = 0; i < pred.rows(); i++) {
-    ptr_res_data[i] = pred(i);
+    data_ptr_res_data[i] = pred(i);
   }
 
   return Py_BuildValue("O", res);
@@ -332,23 +331,23 @@ static int python_Lnet_fit(LnetObject *self, PyObject *args, PyObject *kwargs) {
 
   // Handle X argument
   arg_X = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_X), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
+  double* data_ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
   const int nrow_X = (arg_X->dimensions)[0];
   const int ncol_X = (arg_X->dimensions)[1];
 
   // Handle y argument
   arg_y = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_y), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* ptr_arg_y = reinterpret_cast<double*>(arg_y->data);
+  double* data_ptr_arg_y = reinterpret_cast<double*>(arg_y->data);
   const int nrow_y = (arg_y->dimensions)[0];
 
   // Handle alpha argument
   arg_alpha = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_alpha), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* ptr_arg_alpha = reinterpret_cast<double*>(arg_alpha->data);
+  double* data_ptr_arg_alpha = reinterpret_cast<double*>(arg_alpha->data);
 
   // Setup
-  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(ptr_arg_X, nrow_X, ncol_X);
-  const Map<VectorXd> y(ptr_arg_y, nrow_y);
-  const Map<Vector6d> alpha(ptr_arg_alpha);
+  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
+  const Map<VectorXd> y(data_ptr_arg_y, nrow_y);
+  const Map<Vector6d> alpha(data_ptr_arg_alpha);
 
   // Fit
   const VectorXd B_0 = VectorXd::Zero(X.cols());
@@ -368,10 +367,10 @@ static PyObject* python_Lnet_coeff(LnetObject *self, PyObject *Py_UNUSED(ignored
   long B_res_dims[1];
   B_res_dims[0] = self->B.rows();
   PyArrayObject* B_res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, B_res_dims, NPY_DOUBLE)); // 1 is for vector
-  double* ptr_B_res = (reinterpret_cast<double*>(B_res->data));
+  double* data_ptr_B_res = (reinterpret_cast<double*>(B_res->data));
 
   for (int i = 0; i < self->B.rows(); i++) {
-    ptr_B_res[i] = self->B(i);
+    data_ptr_B_res[i] = self->B(i);
   }
 
   // return dictionary
@@ -394,12 +393,12 @@ static PyObject* python_Lnet_predict(LnetObject *self, PyObject *args, PyObject*
 
   // Handle X argument
   arg_X = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_X), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
+  double* data_ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
   const int nrow_X = (arg_X->dimensions)[0];
   const int ncol_X = (arg_X->dimensions)[1];
 
   // Setup
-  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(ptr_arg_X, nrow_X, ncol_X);
+  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
 
   // Predict
   const VectorXd pred = predict(X, self->intercept, self->B);
@@ -410,10 +409,10 @@ static PyObject* python_Lnet_predict(LnetObject *self, PyObject *args, PyObject*
   long res_dims[1];
   res_dims[0] = pred.rows();
   PyArrayObject* res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_dims, NPY_DOUBLE)); // 1 is for vector
-  double* ptr_res_data = (reinterpret_cast<double*>(res->data));
+  double* data_ptr_res_data = (reinterpret_cast<double*>(res->data));
 
   for (int i = 0; i < pred.rows(); i++) {
-    ptr_res_data[i] = pred(i);
+    data_ptr_res_data[i] = pred(i);
   }
 
   return Py_BuildValue("O", res);
