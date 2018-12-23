@@ -16,7 +16,6 @@ using std::sort;
 using std::cout;
 
 // TODO add some success logic for CV
-// TODO add line search function
 
 // long double matrix, vector, scalar
 typedef long double ld;
@@ -77,17 +76,6 @@ VectorXd predict(const MatrixXd& X, const double intercept, const VectorXd& B) {
   return intercept * VectorXd::Ones(n) + (X * B);
 }
 
-
-
-
-
-
-
-
-
-
-
-
 /*
 
 Proximal Gradient Descent
@@ -96,7 +84,7 @@ Proximal Gradient Descent
 
 FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
                               const Vector6d& alpha, const double lambda,
-                              const int max_iter, const double tolerance, const int random_seed) {
+                              const int max_iter, const double tolerance) {
   VectorXd B = B_0; // create return value
   const int n = X.rows();
   const int p = X.cols();
@@ -109,17 +97,21 @@ FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const Vect
   const VectorXd cy = y - (y.mean() * VectorXd::Ones(n));
 
   for (int j = 0; j < max_iter; j++) {
-    const VectorXd B_old = B; // Copy B for comparison
-  
+    // Keep track of current B and intercept
+    const VectorXd B_old = B;
+    const double intercept_old = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B_old));
+
     // Compute derivative of f
     VectorXd Df = VectorXd::Zero(p); // Derivative of loss + differentiable penalizations
     const VectorXd cache_d = cy - (cX * B_old); // compute only once for speed
     for (int i = 0; i < p; i++) {
-      Df(i) = -1 * cX.col(i).transpose() * cache_d;
+      Df(i) = -1 * cX.col(i).transpose() * cache_d
+                + alpha(1) * lambda * B_old(i) + alpha(2) * lambda * pow(B_old(i), 3) 
+                + alpha(3) * lambda * pow(B_old(i), 5) + alpha(4) * lambda * pow(B_old(i), 7) + alpha(5) * lambda * pow(B_old(i), 9);
     }
 
     // Line search
-    double h_j = 0.25; // initial step size
+    double h_j = 1; // initial step size
     bool line_searching = true;
     while (line_searching) {
       for (int i = 0; i < p; i++) {
@@ -135,10 +127,11 @@ FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const Vect
       }
 
       // Line search criterion from Boyd: Proximal algorithms
-      if ( (cy - (cX * B)).squaredNorm() <= cache_d.squaredNorm() + Df.transpose() * (B - B_old) + 1.0/((double)2.0 * h_j) * (B - B_old).squaredNorm() ) {
+      const double intercept = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
+      if ( (y - intercept * VectorXd::Ones(n) - (X * B)).squaredNorm() <= (y - intercept_old * VectorXd::Ones(n) - (X * B_old)).squaredNorm() + Df.transpose() * (B - B_old) + 1.0/((double)2.0 * h_j) * (B - B_old).squaredNorm() ) {
         line_searching = false; // break
       } else {
-        h_j = 0.5 * h_j; // half step size
+        h_j = .5 * h_j; // half step size
       } 
     }
 
@@ -155,8 +148,8 @@ FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const Vect
   }
 
   std::cout << "Failed to converge!\n";
+  const double intercept = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
   // Build return value
-  const double intercept = 1/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
   FitType fit;
   fit.converged = false;
   fit.intercept = intercept;
@@ -164,25 +157,96 @@ FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const Vect
   return fit;
 }
 
+// Returns a vector of B corresponding to lambdas using warm-start.
+// We do not sort the lambdas here, they are ordered how you want them
+vector<FitType> fit_warm_start_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
+                                         const Vector6d& alpha, const vector<double>& lambdas,
+                                         const int max_iter, const double tolerance) {
+  const int p = X.cols();
+  const int L = lambdas.size();
+  vector<FitType> fit_vector;
 
+  // do the first one normally
+  VectorXd B_0 = VectorXd::Zero(p);
+  fit_vector.push_back(fit_proximal_gradient(B_0, X, y, alpha, lambdas[0], max_iter, tolerance));
 
+  // Warm start after the first one
+  for (int l = 1; l < L; l++) {
+    const FitType fit_warm = fit_vector.at(l - 1); // warm start
+    const VectorXd B_warm = fit_warm.B;
+    fit_vector.push_back(fit_proximal_gradient(B_warm, X, y, alpha, lambdas[l], max_iter, tolerance));
+  }
+  return fit_vector;
+}
 
+CVType cross_validation_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
+                                             const double K_fold, const Vector6d& alpha, const vector<double>& arg_lambdas,
+                                             const int max_iter, const double tolerance, const int random_seed) {
+  int n = X.rows();
+  int p = X.cols();
+  vector<double> lambdas = arg_lambdas; // copy argument
+  int L = lambdas.size();
+  MatrixXd test_risks_matrix = MatrixXd::Zero(L, K_fold);
 
+  sort(lambdas.begin(), lambdas.end(), std::greater<double>()); // sort the lambdas in place descending
 
+  // Create random permutation using the Mersenne twister random number engine 64 bit
+  vector<int> I(n);
+  std::iota (std::begin(I), std::end(I), 0);
+  std::mt19937_64 rng(random_seed);
+  std::shuffle(std::begin(I), std::end(I), rng); // permute
 
+  vector<vector<int>> partitions = partition(I, K_fold);
+  for (size_t k = 0; k < partitions.size(); k++) {
+    vector<int> TEST = partitions[k];
 
+    // Build training indices
+    vector<int> TRAIN;
+    for (int& i : I) {
+      bool exists = false;
+      for (int& j : TEST) {
+        if (j == i) {
+          exists = true;
+        }
+      }
+      if (exists == false) {
+        TRAIN.push_back(i);
+      }
+    }
 
+    // Build X_train, y_train
+    MatrixXd X_train = MatrixXd(TRAIN.size(), p);
+    VectorXd y_train = VectorXd(TRAIN.size());
+    for (size_t i = 0; i < TRAIN.size(); i++) {
+      X_train.row(i) = X.row(TRAIN[i]);
+      y_train.row(i) = y.row(TRAIN[i]);
+    }
 
+    // Build X_test, y_test
+    MatrixXd X_test = MatrixXd(TEST.size(), p);
+    VectorXd y_test = VectorXd(TEST.size());
+    for (size_t i = 0; i < TEST.size(); i++) {
+      X_test.row(i) = X.row(TEST[i]);
+      y_test.row(i) = y.row(TEST[i]);
+    }
 
+    // Do the computation
+    const vector<FitType> fit_vector = fit_warm_start_proximal_gradient(X_train, y_train, alpha, lambdas, max_iter, tolerance);
+    for (size_t l = 0; l < fit_vector.size(); l++) {
+      const FitType fit = fit_vector.at(l);
+      const VectorXd B = fit.B;
+      const double intercept = fit.intercept;
 
+      test_risks_matrix(l, k) = mean_squared_error(y_test, predict(X_test, intercept, B));
+    }
+  }
 
-
-
-
-
-
-
-
+  // build return
+  CVType cv;
+  cv.risks = test_risks_matrix.rowwise().mean();
+  cv.lambdas = lambdas;
+  return cv;
+}
 
 
 /*
