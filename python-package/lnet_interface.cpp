@@ -1,8 +1,11 @@
 /*
 Refer to this documentation: https://docs.python.org/3/extending/newtypes_tutorial.html
+Reference:
+  PySys_WriteStdout(std::to_string(self->max_iter).c_str());
 */
 
 // TODO document
+// TODO change ptr variables to data_ptr
 
 #include <math.h>
 #include <vector>
@@ -28,15 +31,28 @@ typedef struct {
   PyObject_HEAD
 
   double best_lambda;
-  VectorXd risks;
-  vector<double> lambdas;
+  VectorXd cv_risks;
+  vector<double> cv_lambdas;
+
+  MatrixXd X;
+  VectorXd y;
+  Vector6d alpha;
+  double step_size;
+  int K_fold;
+  int max_iter;
+  double tolerance;
+  int random_seed;
 } LnetCVObject;
 
 static PyObject* LnetCV_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     LnetCVObject *self;
     self = (LnetCVObject *) type->tp_alloc(type, 0);
     if (self != NULL) {
-      // initialization goes here
+      // Set default values
+      self->K_fold = 10;
+      self->max_iter = 10000;
+      self->tolerance = pow(10, -8);
+      self->random_seed = 0;
     }
     return (PyObject *) self;
 }
@@ -54,19 +70,12 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   PyArrayObject* arg_X = NULL;
   PyArrayObject* arg_alpha = NULL;
   PyArrayObject* arg_lambdas = NULL;
-  double arg_step_size;
-
-  // Arguments with default values
-  int arg_K_fold = 10;
-  int arg_max_iter = 10000;
-  double arg_tolerance = pow(10, -8);
-  int arg_random_seed = 0;
 
   // Parse arguments
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!O!d|iidi", keywords,
                         &PyArray_Type, &arg_X, &PyArray_Type, &arg_y,
-                        &PyArray_Type, &arg_alpha, &PyArray_Type, &arg_lambdas, &arg_step_size, 
-                        &arg_K_fold, &arg_max_iter, &arg_tolerance, &arg_random_seed)) {
+                        &PyArray_Type, &arg_alpha, &PyArray_Type, &arg_lambdas, &(self->step_size), 
+                        &(self->K_fold), &(self->max_iter), &(self->tolerance), &(self->random_seed))) {
     return -1;
   }
 
@@ -90,7 +99,7 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   double* ptr_arg_lambdas = reinterpret_cast<double*>(arg_lambdas->data);
   const int nrow_lambdas = (arg_lambdas->dimensions)[0];
 
-  // Build lambdas
+  // Build unordered lambdas
   vector<double> lambdas;
   lambdas.assign(ptr_arg_lambdas, ptr_arg_lambdas + nrow_lambdas);
 
@@ -99,19 +108,22 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   const Map<VectorXd> y(ptr_arg_y, nrow_y);
   const Map<Vector6d> alpha(ptr_arg_alpha);
 
+  // Assign to class
+  self->X = X;
+  self->y = y;
+  self->alpha = alpha;
+
   // CV
-  CVType cv = cross_validation_proximal_gradient_cd(X, y, arg_K_fold, alpha, lambdas, arg_step_size, arg_max_iter, arg_tolerance, arg_random_seed);
+  CVType cv = cross_validation_proximal_gradient_cd(self->X, self->y, self->K_fold, self->alpha, lambdas, self->step_size, self->max_iter, self->tolerance, self->random_seed);
 
   // Get location of best lambda
   MatrixXf::Index min_row;
   cv.risks.minCoeff(&min_row);
 
-
-  // Set to class
+  // Assign to class
   self->best_lambda = cv.lambdas[min_row];
-  self->risks = cv.risks;
-  self->lambdas = cv.lambdas;
-
+  self->cv_risks = cv.risks;
+  self->cv_lambdas = cv.lambdas;
   return 0;
 }
 
@@ -119,24 +131,24 @@ static PyObject* python_LnetCV_data(LnetCVObject *self, PyObject *Py_UNUSED(igno
   //
   // Copy to Python
   //
-  // Copy risks
+  // Copy cv risks
   long res_risks_dims[1];
-  res_risks_dims[0] = self->risks.rows();
+  res_risks_dims[0] = self->cv_risks.rows();
   PyArrayObject* res_risks = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_risks_dims, NPY_DOUBLE));
   double* ptr_res_risks = (reinterpret_cast<double*>(res_risks->data));
 
-  for (int i = 0; i < self->risks.rows(); i++) {
-    ptr_res_risks[i] = self->risks(i);
+  for (int i = 0; i < self->cv_risks.rows(); i++) {
+    ptr_res_risks[i] = self->cv_risks(i);
   }
 
-  // Copy lambdas
+  // Copy cv lambdas
   long res_lambdas_dims[1];
-  res_lambdas_dims[0] = self->lambdas.size();
+  res_lambdas_dims[0] = self->cv_lambdas.size();
   PyArrayObject* res_lambdas = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_lambdas_dims, NPY_DOUBLE));
   double* ptr_res_lambdas = (reinterpret_cast<double*>(res_lambdas->data));
 
-  for (size_t i = 0; i < self->lambdas.size(); i++) {
-    ptr_res_lambdas[i] = self->lambdas[i];
+  for (size_t i = 0; i < self->cv_lambdas.size(); i++) {
+    ptr_res_lambdas[i] = self->cv_lambdas[i];
   }
 
   // return dictionary
@@ -144,6 +156,10 @@ static PyObject* python_LnetCV_data(LnetCVObject *self, PyObject *Py_UNUSED(igno
                 "risks", res_risks, 
                 "lambdas", res_lambdas,
                 "best_lambda", self->best_lambda);
+}
+
+static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObject* kwargs) {
+  return NULL;
 }
 
 /*
@@ -155,6 +171,7 @@ static PyMemberDef LnetCV_members[] = {
 
 static PyMethodDef LnetCV_methods[] = {
   {"data", reinterpret_cast<PyCFunction>(python_LnetCV_data), METH_NOARGS, "doc string"},
+  {"predict", reinterpret_cast<PyCFunction>(python_LnetCV_predict), METH_VARARGS|METH_KEYWORDS, "doc string"},
   {NULL}  /* Sentinel */
 };
 
