@@ -42,7 +42,7 @@ print("Test MSE:", ((y_test - fit.predict(X = X_test))**2).mean())
 ###
 # CV test
 ###
-cv = lnet.LnetCV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas)
+cv = lnet.CV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas)
 print("CV Test MSE:", ((y_test - cv.predict(X = X_test))**2).mean())
 
 ###
