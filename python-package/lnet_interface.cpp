@@ -75,7 +75,7 @@ static PyObject* python_fit(PyObject *self, PyObject *args, PyObject* kwargs) {
   for (int i = 0; i < B.rows(); i++) {
     ptr_B_res[i] = B(i);
   }
-  
+
   // return dictionary
   return Py_BuildValue("{s:d, s:O}",
                 "intercept", intercept, 
@@ -216,7 +216,11 @@ static PyObject* python_cross_validation(PyObject *self, PyObject *args, PyObjec
     ptr_res_lambdas[i] = cv.lambdas[i];
   }
 
-  return Py_BuildValue("OOd", res_risks, res_lambdas, best_lambda);
+  // return dictionary
+  return Py_BuildValue("{s:O, s:O, s:d}",
+                "cv_risks", res_risks, 
+                "cv_lambdas", res_lambdas,
+                "best_lambda", best_lambda);
 }
 
 static PyMethodDef methods[] = {

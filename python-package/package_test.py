@@ -44,7 +44,8 @@ print("mse:", ((y_test - lnet.predict(X = X_test, intercept = intercept, B = B))
 ###
 # CV test
 ###
-cv_risks, cv_lambdas, best_lambda = lnet.cross_validation(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
+cv = lnet.cross_validation(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
+best_lambda = cv["best_lambda"]
 
 best_fit = lnet.fit(X = X_train, y = y_train, alpha = alpha, lambda_ = best_lambda, step_size = step_size)
 best_intercept = fit["intercept"]
