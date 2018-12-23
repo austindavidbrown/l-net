@@ -46,8 +46,8 @@ void fit_test(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& 
   FitType fit = fit_proximal_gradient_cd(B_0, X_train, y_train, alpha, lambda, step_size, max_iter, tolerance, random_seed);
 
   cout << "\nConverged:" << fit.converged << "\n";
-  cout << "\nB:\n" << fit.B << "\n";
   cout << "\nintercept:\n" << fit.intercept << "\n";
+  cout << "\nB:\n" << fit.B << "\n";
 
   cout << "\nMSE: " << mean_squared_error(y_train, predict(X_train, fit.intercept, fit.B)) << "\n";
   cout << "\nTest MSE: " << mean_squared_error(y_test, predict(X_test, fit.intercept, fit.B)) << "\n";
@@ -201,7 +201,7 @@ void test_random_gen() {
 }
 
 int main() {
-  // test_prostate();
+  test_prostate();
   test_prox();
   // test_random_gen();
   // bench();
