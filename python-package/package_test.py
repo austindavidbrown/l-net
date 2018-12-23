@@ -37,18 +37,14 @@ random_seed = 777;
 # Single fit test
 ###
 fit = lnet.Lnet(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_, step_size = step_size)
-print("mse:", ((y_test - fit.predict(X = X_test))**2).mean())
+print("Test MSE:", ((y_test - fit.predict(X = X_test))**2).mean())
 print(fit.coeff())
 
 ###
 # CV test
 ###
 cv = lnet.LnetCV(X = X_train, y = y_train, alpha = alpha, lambdas = lambdas, step_size = step_size)
-print(cv.data())
-
-best_lambda = cv.data()["best_lambda"]
-best_fit = lnet.Lnet(X = X_train, y = y_train, alpha = alpha, lambda_ = best_lambda, step_size = step_size)
-print("mse:", ((y_test - best_fit.predict(X = X_test))**2).mean())
+print("CV Test MSE:", ((y_test - cv.predict(X = X_test))**2).mean())
 
 
 

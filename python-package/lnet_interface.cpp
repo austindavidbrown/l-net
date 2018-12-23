@@ -6,6 +6,7 @@ Reference:
 
 // TODO document
 // TODO change ptr variables to data_ptr
+// Change self->X and the X in CV it is confusing
 
 #include <math.h>
 #include <vector>
@@ -38,6 +39,7 @@ typedef struct {
   VectorXd y;
   Vector6d alpha;
   double step_size;
+
   int K_fold;
   int max_iter;
   double tolerance;
@@ -159,7 +161,46 @@ static PyObject* python_LnetCV_data(LnetCVObject *self, PyObject *Py_UNUSED(igno
 }
 
 static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObject* kwargs) {
-  return NULL;
+  char* keywords[] = {"X", NULL};
+
+  // Required arguments
+  PyArrayObject* arg_X = NULL;
+
+  // Parse arguments
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", keywords, 
+                                   &PyArray_Type, &arg_X)) {
+    return NULL;
+  }
+
+  // Handle X argument
+  arg_X = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_X), NPY_DOUBLE, NPY_IN_ARRAY));
+  double* ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
+  const int nrow_X = (arg_X->dimensions)[0];
+  const int ncol_X = (arg_X->dimensions)[1];
+
+  // Setup
+  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(ptr_arg_X, nrow_X, ncol_X);
+
+  // Fit
+  const VectorXd B_0 = VectorXd::Zero(self->X.cols());
+  const FitType fit = fit_proximal_gradient_cd(B_0, self->X, self->y, self->alpha, self->best_lambda, self->step_size, self->max_iter, self->tolerance, self->random_seed);
+
+  // Predict
+  const VectorXd pred = predict(X, fit.intercept, fit.B);
+
+  //
+  // Copy to Python
+  //
+  long res_dims[1];
+  res_dims[0] = pred.rows();
+  PyArrayObject* res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_dims, NPY_DOUBLE)); // 1 is for vector
+  double* ptr_res_data = (reinterpret_cast<double*>(res->data));
+
+  for (int i = 0; i < pred.rows(); i++) {
+    ptr_res_data[i] = pred(i);
+  }
+
+  return Py_BuildValue("O", res);
 }
 
 /*
