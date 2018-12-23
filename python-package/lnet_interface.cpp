@@ -4,7 +4,6 @@ Reference:
   PySys_WriteStdout(std::to_string(self->max_iter).c_str());
 */
 
-// TODO document
 // TODO change ptr variables to data_ptr
 // Change self->X and the X in CV it is confusing
 
@@ -22,8 +21,10 @@ Reference:
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION // use new numpy api
 
 using namespace Eigen;
-using std::cout;
 using std::vector;
+using std::string;
+using std::cout;
+
 
 /*
 LnetCV python class
@@ -206,20 +207,68 @@ static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObj
 /*
 LnetCV python class definition
 */
+
+// documentation
+static const char* DOC_LnetCV_fit = R"(
+Cross-validation
+
+The \code{LnetCV} function is used for K-fold cross-validation.
+ 
+@param X is an \eqn{n \times m}-dimensional matrix of the data.
+@param y is an \eqn{n \times m}-dimensional matrix of the data.
+@param alpha is a \eqn{6}-dimensional vector of the convex combination corresponding to the penalization:
+\itemize{
+   \item \eqn{\alpha_1} is the \eqn{l^1} penalty.
+   \item \eqn{\alpha_2} is the \eqn{l^2} penalty.
+   \item \eqn{\alpha_3} is the \eqn{l^4} penalty.
+   \item \eqn{\alpha_4} is the \eqn{l^6} penalty.
+   \item \eqn{\alpha_5} is the \eqn{l^8} penalty.
+   \item \eqn{\alpha_6} is the \eqn{l^{10}} penalty.
+}
+@param K_fold is the number of folds in cross-validation.
+@param lambdas is a vector of dual penalization values to be evaluated.
+@param step_size is a tuning parameter defining the step size. Larger values are more aggressive and smaller values are less aggressive.
+@param max_iter is the maximum iterations the algorithm will run regardless of convergence.
+@param tolerance is the accuracy of the stopping criterion.
+@param random_seed is the random seed used in the algorithms.
+
+@return A class \code{LnetCV}
+)";
+
+static const char* DOC_LnetCV_predict = R"(
+Cross-validation Prediction
+ 
+The prediction function for \code{cv.pros}.
+ 
+@param object an object of class \code{cv_pros}
+@param X_new is an \eqn{n \times m}-dimensional matrix of the data.
+@param ... Other parameters (this is required by R)
+ 
+@return 
+A \code{vector} of prediction values.
+
+@references
+Zou, Hui. “Regularization and variable selection via the elastic net.” (2004).
+)";
+
+static const char* DOC_LnetCV_data = R"(
+Returns data from the CV class.
+)";
+
 static PyMemberDef LnetCV_members[] = {
   {NULL}  /* Sentinel */
 };
 
 static PyMethodDef LnetCV_methods[] = {
-  {"data", reinterpret_cast<PyCFunction>(python_LnetCV_data), METH_NOARGS, "doc string"},
-  {"predict", reinterpret_cast<PyCFunction>(python_LnetCV_predict), METH_VARARGS|METH_KEYWORDS, "doc string"},
+  {"data", reinterpret_cast<PyCFunction>(python_LnetCV_data), METH_NOARGS, DOC_LnetCV_data},
+  {"predict", reinterpret_cast<PyCFunction>(python_LnetCV_predict), METH_VARARGS|METH_KEYWORDS, DOC_LnetCV_predict},
   {NULL}  /* Sentinel */
 };
 
 static PyTypeObject LnetCVType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "LnetCV",
-    .tp_doc = "doc string",
+    .tp_doc = DOC_LnetCV_fit,
     .tp_basicsize = sizeof(LnetCVObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -233,7 +282,9 @@ static PyTypeObject LnetCVType = {
 
 
 /*
+
 Lnet python class
+
 */
 typedef struct {
   PyObject_HEAD
@@ -303,7 +354,7 @@ static int python_Lnet_fit(LnetObject *self, PyObject *args, PyObject *kwargs) {
   const VectorXd B_0 = VectorXd::Zero(X.cols());
   const FitType fit = fit_proximal_gradient_cd(B_0, X, y, alpha, arg_lambda, arg_step_size, arg_max_iter, arg_tolerance, arg_random_seed);
 
-  // Set to the class
+  // Assign to the class
   self->B = fit.B;
   self->intercept = fit.intercept;
 
@@ -369,22 +420,73 @@ static PyObject* python_Lnet_predict(LnetObject *self, PyObject *args, PyObject*
 }
 
 /*
+
 Lnet python class definition
+
 */
+
+// Documentation
+static const char* DOC_Lnet_fit = R"(
+Lnet
+ 
+The \code{Lnet} class is used to fit a single regression model with a specified penalization. 
+
+@param X is an \eqn{n \times m}-dimensional matrix of the data.
+@param y is an \eqn{n \times m}-dimensional matrix of the data.
+@param alpha is a \eqn{6}-dimensional vector of the convex combination corresponding to the penalization:
+\itemize{
+\item \eqn{\alpha_1} is the \eqn{l^1} penalty.
+  \item \eqn{\alpha_2} is the \eqn{l^2} penalty.
+  \item \eqn{\alpha_3} is the \eqn{l^4} penalty.
+  \item \eqn{\alpha_4} is the \eqn{l^6} penalty.
+  \item \eqn{\alpha_5} is the \eqn{l^8} penalty.
+  \item \eqn{\alpha_6} is the \eqn{l^{10}} penalty.
+}
+@param lambda is the Lagrangian dual penalization parameter.
+@param step_size is a tuning parameter defining the step size. Larger values are more aggressive and smaller values are less aggressive.
+@param max_iter is the maximum iterations the algorithm will run regardless of convergence.
+@param tolerance is the accuracy of the stopping criterion.
+@param random_seed is the random seed used in the algorithms.
+ 
+@return 
+A class \code{Lnet}
+
+@references
+Zou, Hui. “Regularization and variable selection via the elastic net.” (2004).
+)";
+
+static const char* DOC_Lnet_predict = R"(
+Lnet Prediction
+
+The prediction function for \code{pros}.
+ 
+@param object an object of class \code{pros}
+@param X is an \eqn{n \times m}-dimensional matrix of the data.
+@param ... Other parameters (this is required by R)
+ 
+@return A \code{vector} of prediction values.
+)";
+
+static const char* DOC_Lnet_coeff = R"(
+Lnet coeff
+
+Returns the coefficients.
+)";
+
 static PyMemberDef Lnet_members[] = {
   {NULL}  /* Sentinel */
 };
 
 static PyMethodDef Lnet_methods[] = {
-  {"coeff", reinterpret_cast<PyCFunction>(python_Lnet_coeff), METH_NOARGS, "doc string"},
-  {"predict", reinterpret_cast<PyCFunction>(python_Lnet_predict), METH_VARARGS|METH_KEYWORDS, "doc string"},
+  {"coeff", reinterpret_cast<PyCFunction>(python_Lnet_coeff), METH_NOARGS, DOC_Lnet_coeff},
+  {"predict", reinterpret_cast<PyCFunction>(python_Lnet_predict), METH_VARARGS|METH_KEYWORDS, DOC_Lnet_predict},
   {NULL}  /* Sentinel */
 };
 
 static PyTypeObject LnetType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "Lnet",
-    .tp_doc = "doc string",
+    .tp_doc = DOC_Lnet_fit,
     .tp_basicsize = sizeof(LnetObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -397,8 +499,16 @@ static PyTypeObject LnetType = {
 
 
 /*
-lnet python module definition
+
+lnet python module
+
 */
+
+// Documentation
+static const char* DOC_lnet_module = R"(
+Adds the ability to combine l1 to l10 penalties in regression extending the elastic-net.
+)";
+
 static PyMethodDef lnet_methods[] = {
     {NULL, NULL, 0, NULL},
 };
@@ -406,7 +516,7 @@ static PyMethodDef lnet_methods[] = {
 static struct PyModuleDef lnet_module = {
     PyModuleDef_HEAD_INIT,
     .m_name =  "lnet",
-    .m_doc = "doc string",
+    .m_doc = DOC_lnet_module,
     .m_size = -1,
     lnet_methods,
 };
