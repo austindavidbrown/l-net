@@ -35,7 +35,7 @@ M load_csv (const std::string & path) {
 //
 
 // test fit
-void fit_test(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, double lambda, double step_size) {
+void test_fit_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, double lambda, double step_size) {
   cout << R"(
   Fit test
   -------
@@ -57,7 +57,7 @@ void fit_test(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& 
 }
 
 // test warm start
-void warm_start_test(MatrixXd& X, VectorXd& y, Vector6d alpha, vector<double> lambdas, double step_size) {
+void test_fit_warm_start_proximal_gradient_cd(MatrixXd& X, VectorXd& y, Vector6d alpha, vector<double> lambdas, double step_size) {
   cout << "\nWarm start test\n";
 
   int max_iter = 10000;
@@ -71,7 +71,7 @@ void warm_start_test(MatrixXd& X, VectorXd& y, Vector6d alpha, vector<double> la
 }
 
 // test cross validation
-void cv_test(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, vector<double> lambdas, double step_size, int K_fold) {
+void test_cross_validation_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, vector<double> lambdas, double step_size, int K_fold) {
   cout << R"(
   CV test
   -------
@@ -148,7 +148,7 @@ void test_prox() {
   // fit test
   //
   double lambda = .1;
-  fit_test(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
+  test_fit_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
 
   //
   // warm start test
@@ -159,13 +159,13 @@ void test_prox() {
   for (int i = 1; i < 10; i++) {
     lambdas.push_back(lambdas[i - 1] + .1);
   }
-  warm_start_test(X_train, y_train, alpha, lambdas, step_size);
+  test_fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size);
 
   //
   // cv test
   //
   int K_fold = 10;
-  cv_test(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
+  test_cross_validation_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
 }
 
 void test_prostate() {
@@ -185,7 +185,7 @@ void test_prostate() {
   // fit test
   //
   double lambda = 11;
-  fit_test(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
+  test_fit_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
 
   //
   // warm start test
@@ -197,13 +197,13 @@ void test_prostate() {
     lambdas.push_back(lambdas[i - 1] + .1);
   }
 
-  warm_start_test(X_train, y_train, alpha, lambdas, step_size);
+  test_fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size);
 
   //
   // cv test
   //
   int K_fold = 10;
-  cv_test(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
+  test_cross_validation_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
 }
 
 int main() {
