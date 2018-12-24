@@ -1,2 +1,4 @@
 env/
+dist/
+*.egg-info/
 *.so

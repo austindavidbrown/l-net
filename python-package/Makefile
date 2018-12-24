@@ -12,3 +12,8 @@ python_setup:
 
 build_docs:
 	./env/bin/python3 -m pydoc -w lnet
+
+publish:
+	pip install twine
+	python3 setup.py sdist bdist_wheel
+	twine upload dist/*

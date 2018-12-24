@@ -1055,41 +1055,24 @@ body .markdown-body
 .codehilite .vi{color:teal}
 .codehilite .il{color:#009999}
 .codehilite .gc{color:#999;background-color:#EAF2F5}
-</style><title>python_package_introduction</title></head><body><article class="markdown-body"><h1 id="python-package-introduction">Python Package Introduction<a class="headerlink" href="#python-package-introduction" title="Permanent link"></a></h1>
-<h2 id="install-l-net">Install l-net<a class="headerlink" href="#install-l-net" title="Permanent link"></a></h2>
+</style><title>README</title></head><body><article class="markdown-body"><h1 id="l-net">l-net<a class="headerlink" href="#l-net" title="Permanent link"></a></h1>
+<p>Adds the ability to combine l1 to l10 penalties in regression extending the elastic-net.</p>
+<h2 id="python-installation">Python Installation<a class="headerlink" href="#python-installation" title="Permanent link"></a></h2>
+<div class="codehilite"><pre>pip install l-net
+</pre></div>
+
+<p>Or install from the github repo</p>
 <div class="codehilite"><pre>pip install numpy <span class="c1"># install numpy</span>
 pip install git+https://github.com/austindavidbrown/l-net/#egg<span class="o">=</span>l-net<span class="se">\&amp;</span><span class="nv">subdirectory</span><span class="o">=</span>python-package
 </pre></div>
 
-<h2 id="generate-sparse-data-with-numpy-or-load-a-dataset">Generate sparse data with numpy or load a dataset<a class="headerlink" href="#generate-sparse-data-with-numpy-or-load-a-dataset" title="Permanent link"></a></h2>
-<div class="codehilite"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-
-<span class="n">n</span> <span class="o">=</span> <span class="mi">100</span>
-<span class="n">p</span> <span class="o">=</span> <span class="mi">10</span>
-<span class="n">SPLIT_RATIO</span> <span class="o">=</span> <span class="o">.</span><span class="mi">8</span>
-<span class="n">SPARSITY_LEVEL</span> <span class="o">=</span> <span class="n">p</span> <span class="o">//</span> <span class="mi">2</span>
-
-<span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
-<span class="n">B</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">SPARSITY_LEVEL</span><span class="p">,</span> <span class="n">replace</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># sparsify</span>
-<span class="n">intercept</span> <span class="o">=</span> <span class="mi">5</span>
-
-<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-  <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">intercept</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="n">X</span> <span class="err">@</span> <span class="n">B</span>
-
-<span class="n">TRAIN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">SPLIT_RATIO</span> <span class="o">*</span> <span class="n">n</span><span class="p">)))</span>
-<span class="n">TEST</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">SPLIT_RATIO</span> <span class="o">*</span> <span class="n">n</span><span class="p">)),</span> <span class="n">n</span><span class="p">)</span>
-<span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">TRAIN</span><span class="p">,</span> <span class="p">:],</span> <span class="n">y</span><span class="p">[</span><span class="n">TRAIN</span><span class="p">]</span>
-<span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">TEST</span><span class="p">,</span> <span class="p">:],</span> <span class="n">y</span><span class="p">[</span><span class="n">TEST</span><span class="p">]</span>
-</pre></div>
-
-<h2 id="train-and-predict">Train and predict<a class="headerlink" href="#train-and-predict" title="Permanent link"></a></h2>
-<div class="codehilite"><pre><span class="kn">import</span> <span class="nn">lnet</span> <span class="kn">as</span> <span class="nn">lnet</span>
-
-<span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-<span class="n">cv</span> <span class="o">=</span> <span class="n">lnet</span><span class="o">.</span><span class="n">CV</span><span class="p">(</span><span class="n">X</span> <span class="o">=</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">)</span>
-<span class="n">pred</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span> <span class="o">=</span> <span class="n">X_test</span><span class="p">)</span>
-
-<span class="k">print</span><span class="p">(</span><span class="s">&quot;MSE on the test set: &quot;</span><span class="p">,</span> <span class="p">((</span><span class="n">y_test</span> <span class="o">-</span> <span class="n">pred</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
-</pre></div></article></body></html>
+<h2 id="tutorial">Tutorial<a class="headerlink" href="#tutorial" title="Permanent link"></a></h2>
+<p><a href="https://github.com/austindavidbrown/l-net/blob/master/doc/python_package_introduction.md">Python package Introduction</a></p>
+<h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link"></a></h2>
+<p>See the <a href="http://htmlpreview.github.io/?https://github.com/austindavidbrown/l-net/blob/master/doc/lnet.html">Python package documentation</a> or help in Python.</p>
+<h2 id="license">License<a class="headerlink" href="#license" title="Permanent link"></a></h2>
+<p>The code is licensed under GPL-3.</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link"></a></h2>
+<ul>
+<li>This is for a project in STAT8053 at the University of Minnesota.</li>
+</ul></article></body></html>
