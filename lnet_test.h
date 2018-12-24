@@ -2,6 +2,7 @@
 Testing for lnet
 */
 
+#include <Eigen/Dense>
 #include "lnet.h"
 
 #include <time.h>
@@ -9,11 +10,14 @@ Testing for lnet
 #include <fstream>
 #include <iomanip>
 
+using namespace Eigen;
 using std::cout;
+
+namespace lnet_test {
 
 // CV parser
 template<typename M>
-M load_csv (const std::string & path) {
+M load_csv(const std::string & path) {
     std::ifstream indata;
     indata.open(path);
     std::string line;
@@ -196,7 +200,7 @@ void test_random_gen() {
   cout << "\n";
 }
 
-void test_prox() {
+void test_regression() {
   //std::cout << std::setprecision(std::numeric_limits<long double>::digits10 + 1); // set precision
 
   MatrixXd X_train = load_csv<MatrixXd>("data/X_train.csv");
@@ -237,7 +241,7 @@ void test_prox() {
   test_cross_validation_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
 }
 
-void test_prostate() {
+void test_regression_prostate() {
   MatrixXd X_train = load_csv<MatrixXd>("data/prostate_X_train.csv");
   VectorXd y_train = load_csv<MatrixXd>("data/prostate_y_train.csv");
 
@@ -278,11 +282,4 @@ void test_prostate() {
   test_cross_validation_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
 }
 
-int main() {
-  test_prox();
-  test_prostate();
-
-  // test_random_gen();
-  // bench();
-}
-
+} // end namespace

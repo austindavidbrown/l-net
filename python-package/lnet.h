@@ -67,7 +67,7 @@ vector<vector<T>> partition(const vector<T>& S, const size_t n) {
 
 /*
 
-lnet
+L-net Regression
 
 */
 
@@ -78,7 +78,7 @@ VectorXd predict(const MatrixXd& X, const double intercept, const VectorXd& B) {
 
 /*
 
-Proximal Gradient Descent
+Proximal Gradient Descent Regression
 
 */
 
