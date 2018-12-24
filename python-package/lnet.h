@@ -1,6 +1,7 @@
 /*
 lnet
 */
+#pragma once // guard header
 
 #include <cmath>
 #include <vector>

@@ -1,7 +1,6 @@
 /*
 Test
 */
-
 #include "lnet_test.h"
 #include "lnet_logistic_regression_test.h"
 
@@ -13,8 +12,8 @@ int main() {
   // bench();
 
   cout << "Test lnet regression\n";
-  test_regression();
-  test_regression_prostate();
+  //test_regression();
+  //test_regression_prostate();
 
   cout << "Test lnet logistic regression\n";
   test_logistic_regression();
