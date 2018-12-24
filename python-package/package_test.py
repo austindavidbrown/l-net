@@ -2,7 +2,7 @@ import numpy as np
 import lnet
 
 ###
-# Generate data
+# Generate Sparse Regression data
 ###
 n = 100
 p = 5
@@ -23,6 +23,10 @@ TRAIN = np.arange(0, int(np.floor(SPLIT_RATIO * n)))
 TEST = np.arange(int(np.floor(SPLIT_RATIO * n)), n)
 X_train, y_train = X[TRAIN, :], y[TRAIN]
 X_test, y_test = X[TEST, :], y[TEST]
+
+###
+# Test
+###
 
 alpha = np.array([1, 0, 0, 0, 0, 0])
 

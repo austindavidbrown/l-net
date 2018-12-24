@@ -31,4 +31,8 @@ The code is licensed under GPL-3.
 
 References
 ---------
-- This project began as a STAT8053 at the University of Minnesota.
+This project began as a STAT8053 at the University of Minnesota.
+
+Zou, Hui. “Regularization and variable selection via the elastic net.” (2004).
+
+Neal Parikh and Stephen Boyd. 2014. Proximal Algorithms. Found. Trends Optim. 1, 3 (January 2014), 127-239. DOI=10.1561/2400000003 http://dx.doi.org/10.1561/2400000003

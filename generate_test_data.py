@@ -27,3 +27,21 @@ np.savetxt("data/y_train.csv", np.asarray(y_train), delimiter=",")
 
 np.savetxt("data/X_test.csv", np.asarray(X_test), delimiter=",")
 np.savetxt("data/y_test.csv", np.asarray(y_test), delimiter=",")
+
+
+
+###
+# Generate logistic regression data
+###
+p = 1/(1 + np.exp(-1 * y))
+
+z = np.zeros(n)
+for i in range(0, n):
+  z[i] = np.random.binomial(1, p[i])
+
+z_train = z[TRAIN]
+z_test = z[TEST]
+
+np.savetxt("data/z_train.csv", np.asarray(z_test), delimiter=",", fmt = "%i")
+np.savetxt("data/z_test.csv", np.asarray(z_test), delimiter=",", fmt = "%i")
+

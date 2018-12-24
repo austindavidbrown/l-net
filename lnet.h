@@ -17,6 +17,7 @@ using std::cout;
 
 // TODO add some convergence logic?
 // TODO look into stopping criterion
+// TODO document purposeful fail silent lack of convergence
 
 // long double matrix, vector, scalar
 typedef long double ld;
