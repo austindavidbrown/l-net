@@ -21,11 +21,6 @@ using std::cout;
 // TODO look into stopping criterion
 // TODO add normalize matrix and remove the centering logic in the optimization
 
-// long double matrix, vector, scalar
-typedef long double ld;
-typedef Matrix<long double, Dynamic, Dynamic> MatrixXld;
-typedef Matrix<long double, Dynamic, 1> VectorXld;
-
 struct FitType {
   double intercept;
   VectorXd B;
@@ -46,10 +41,6 @@ MatrixXd standardize(MatrixXd M) {
     M.col(j) = (M.col(j) - M.col(j).mean() * VectorXd::Ones(n)).normalized();
   }
   return M;
-}
-
-double mean_squared_error(const VectorXd& v, const VectorXd& w) {
-  return 1/((double)v.rows()) * (v - w).squaredNorm(); 
 }
 
 template<typename T>
@@ -82,7 +73,11 @@ Lnet Regression
 ================================
 */
 
-VectorXd predict(const MatrixXd& X, const double intercept, const VectorXd& B) {
+double mean_squared_error(const VectorXd& v, const VectorXd& w) {
+  return 1/((double)v.rows()) * (v - w).squaredNorm(); 
+}
+
+VectorXd predict_regression(const MatrixXd& X, const double intercept, const VectorXd& B) {
   const int n = X.rows();
   return intercept * VectorXd::Ones(n) + (X * B);
 }
@@ -93,7 +88,7 @@ Proximal Gradient Descent Regression
 
 */
 
-FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
+FitType fit_regression_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
                               const Matrix<double, 6, 1>& alpha, const double lambda,
                               const int max_iter, const double tolerance) {
   VectorXd B = B_0; // create return value
@@ -168,7 +163,7 @@ FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const Vect
 
 // Returns a vector of B corresponding to lambdas using warm-start.
 // We do not sort the lambdas here, they are ordered how you want them
-vector<FitType> fit_warm_start_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
+vector<FitType> fit_regression_warm_start_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
                                          const Matrix<double, 6, 1>& alpha, const vector<double>& lambdas,
                                          const int max_iter, const double tolerance) {
   const int p = X.cols();
@@ -177,18 +172,18 @@ vector<FitType> fit_warm_start_proximal_gradient(const MatrixXd& X, const Vector
 
   // do the first one normally
   VectorXd B_0 = VectorXd::Zero(p);
-  fit_vector.push_back(fit_proximal_gradient(B_0, X, y, alpha, lambdas[0], max_iter, tolerance));
+  fit_vector.push_back(fit_regression_proximal_gradient(B_0, X, y, alpha, lambdas[0], max_iter, tolerance));
 
   // Warm start after the first one
   for (int l = 1; l < L; l++) {
     const FitType fit_warm = fit_vector.at(l - 1); // warm start
     const VectorXd B_warm = fit_warm.B;
-    fit_vector.push_back(fit_proximal_gradient(B_warm, X, y, alpha, lambdas[l], max_iter, tolerance));
+    fit_vector.push_back(fit_regression_proximal_gradient(B_warm, X, y, alpha, lambdas[l], max_iter, tolerance));
   }
   return fit_vector;
 }
 
-CVType cross_validation_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
+CVType cross_validation_regression_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
                                              const double K_fold, const Matrix<double, 6, 1>& alpha, const vector<double>& arg_lambdas,
                                              const int max_iter, const double tolerance, const int random_seed) {
   int n = X.rows();
@@ -240,13 +235,13 @@ CVType cross_validation_proximal_gradient(const MatrixXd& X, const VectorXd& y,
     }
 
     // Do the computation
-    const vector<FitType> fit_vector = fit_warm_start_proximal_gradient(X_train, y_train, alpha, lambdas, max_iter, tolerance);
+    const vector<FitType> fit_vector = fit_regression_warm_start_proximal_gradient(X_train, y_train, alpha, lambdas, max_iter, tolerance);
     for (size_t l = 0; l < fit_vector.size(); l++) {
       const FitType fit = fit_vector.at(l);
       const VectorXd B = fit.B;
       const double intercept = fit.intercept;
 
-      test_risks_matrix(l, k) = mean_squared_error(y_test, predict(X_test, intercept, B));
+      test_risks_matrix(l, k) = mean_squared_error(y_test, predict_regression(X_test, intercept, B));
     }
   }
 
@@ -263,7 +258,7 @@ CVType cross_validation_proximal_gradient(const MatrixXd& X, const VectorXd& y,
 Proximal Gradient Coordinate Descent
 
 */
-FitType fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
+FitType fit_regression_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
                               const Matrix<double, 6, 1>& alpha, const double lambda, const double step_size,
                               const int max_iter, const double tolerance, const int random_seed) {
   VectorXd B = B_0; // create return value
@@ -327,7 +322,7 @@ FitType fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const V
 
 // Returns a vector of B corresponding to lambdas using warm-start.
 // We do not sort the lambdas here, they are ordered how you want them
-vector<FitType> fit_warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
+vector<FitType> fit_regression_warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
                                          const Matrix<double, 6, 1>& alpha, const vector<double>& lambdas, const double step_size,
                                          const int max_iter, const double tolerance, const int random_seed) {
   const int p = X.cols();
@@ -336,19 +331,19 @@ vector<FitType> fit_warm_start_proximal_gradient_cd(const MatrixXd& X, const Vec
 
   // do the first one normally
   VectorXd B_0 = VectorXd::Zero(p);
-  fit_vector.push_back(fit_proximal_gradient_cd(B_0, X, y, alpha, lambdas[0], step_size, max_iter, tolerance, random_seed));
+  fit_vector.push_back(fit_regression_proximal_gradient_cd(B_0, X, y, alpha, lambdas[0], step_size, max_iter, tolerance, random_seed));
 
   // Warm start after the first one
   for (int l = 1; l < L; l++) {
     const FitType fit_warm = fit_vector.at(l - 1); // warm start
     const VectorXd B_warm = fit_warm.B;
-    fit_vector.push_back(fit_proximal_gradient_cd(B_warm, X, y, alpha, lambdas[l], step_size, max_iter, tolerance, random_seed));
+    fit_vector.push_back(fit_regression_proximal_gradient_cd(B_warm, X, y, alpha, lambdas[l], step_size, max_iter, tolerance, random_seed));
   }
   return fit_vector;
 }
 
 // Prox Gradient Cross Validation
-CVType cross_validation_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
+CVType cross_validation_regression_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
                                              const double K_fold, const Matrix<double, 6, 1>& alpha, const vector<double>& arg_lambdas, const double step_size,
                                              const int max_iter, const double tolerance, const int random_seed) {
   int n = X.rows();
@@ -400,13 +395,13 @@ CVType cross_validation_proximal_gradient_cd(const MatrixXd& X, const VectorXd& 
     }
 
     // Do the computation
-    const vector<FitType> fit_vector = fit_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
+    const vector<FitType> fit_vector = fit_regression_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
     for (size_t l = 0; l < fit_vector.size(); l++) {
       const FitType fit = fit_vector.at(l);
       const VectorXd B = fit.B;
       const double intercept = fit.intercept;
 
-      test_risks_matrix(l, k) = mean_squared_error(y_test, predict(X_test, intercept, B));
+      test_risks_matrix(l, k) = mean_squared_error(y_test, predict_regression(X_test, intercept, B));
     }
   }
 
@@ -428,16 +423,6 @@ Lnet Classification
 */
 
 // Notes: We purposefully use doubles instead of integers everywhere to avoid any conversion.
-
-struct LogitFitType {
-  double intercept;
-  VectorXd B;
-};
-
-struct LogitCVType {
-  VectorXd risks;
-  vector<double> lambdas;
-};
 
 double sigmoid(const double x) {
   return pow(1 + exp(-1 * x), -1);
@@ -480,10 +465,10 @@ double accuracy(const VectorXd& v, const VectorXd& w) {
   return 1.0/((double)n) * m;
 }
 
-LogitFitType fit_logistic_proximal_gradient_coordinate_descent(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
+FitType fit_logistic_proximal_gradient_coordinate_descent(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
                               const Matrix<double, 6, 1>& alpha, const double lambda, const double step_size,
                               const int max_iter, const double tolerance, const int random_seed) {
-  LogitFitType fit; // return value
+  FitType fit; // return value
 
   const int n = X.rows();
   const int p = X.cols();
