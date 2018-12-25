@@ -1,20 +1,18 @@
 /*
 Testing for lnet
 */
-#pragma once // guard header
-
-#include <Eigen/Dense> 
-#include "lnet.h"
 
 #include <time.h>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 
+#include <Eigen/Dense> 
+#include "lnet.h"
+
+
 using namespace Eigen;
 using std::cout;
-
-namespace lnet_test {
 
 // CV parser
 template<typename M>
@@ -34,6 +32,43 @@ M load_csv(const std::string & path) {
     }
     return Map<Matrix<typename M::Scalar, M::RowsAtCompileTime, M::ColsAtCompileTime, RowMajor>>(values.data(), rows, values.size()/rows);
 }
+
+// Benchmark for compiler optimization
+void bench() {
+  MatrixXf a = MatrixXf::Random(5000, 5000);
+  MatrixXf b = MatrixXf::Random(5000, 5000);
+  time_t start = clock();
+  MatrixXf c = a * b;
+  std::cout << (double)(clock() - start) / CLOCKS_PER_SEC * 1000 << "ms" << std::endl;
+}
+
+// Random number generator test
+void test_random_gen() {
+  int n = 10;
+  vector<int> I(n);
+  std::iota (std::begin(I), std::end(I), 0);
+  std::random_device rd;
+  cout << rd();
+  std::seed_seq random_seed{rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd()};
+  std::mt19937_64 rng(random_seed);
+  time_t start = clock();
+  std::shuffle(std::begin(I), std::end(I), rng); // permute
+  std::cout << (double)(clock() - start) / CLOCKS_PER_SEC * 1000 << "ms" << std::endl;
+
+  cout << "\n";
+  for (auto& i : I) {
+    cout << i << " ";
+  }
+  cout << "\n";
+}
+
+/*
+================================
+
+Regression tests
+
+================================
+*/
 
 /*
 Tests for proximal gradient descent with line search
@@ -254,4 +289,68 @@ void test_regression_prostate() {
   test_cross_validation_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
 }
 
-} // end namespace
+
+
+
+
+
+
+/*
+================================
+
+Classification tests
+
+================================
+*/
+
+
+void test_fit_logistic_proximal_gradient_coordinate_descent(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, double lambda, double step_size) {
+  cout << R"(
+  Test fit_logistic_proximal_gradient_coordinate_descent
+  -------
+  )";
+
+  VectorXd B_0 = VectorXd::Zero(X_train.cols());
+  LogitFitType fit = fit_logistic_proximal_gradient_coordinate_descent(B_0, X_train, y_train, alpha, lambda, step_size, 
+                                                                       10000, pow(10, -6), 0);
+
+  cout << "\nintercept:\n" << fit.intercept << "\n";
+  cout << "\nB:\n" << fit.B << "\n";
+
+  cout << "\nTrain accuracy : " << accuracy(y_train, predict_class(X_train, fit.intercept, fit.B)) << "\n";
+  cout << "\nTest accuracy: " << accuracy(y_test, predict_class(X_test, fit.intercept, fit.B)) << "\n";
+}
+
+void test_logistic_regression() {
+  cout << R"(
+  Test logistic_regression
+  -------
+  )";
+
+  MatrixXd X_train = load_csv<MatrixXd>("data/X_train.csv");
+  VectorXd y_train = load_csv<MatrixXd>("data/binary_y_train.csv");
+
+  MatrixXd X_test = load_csv<MatrixXd>("data/X_test.csv");
+  VectorXd y_test = load_csv<MatrixXd>("data/binary_y_test.csv");
+
+  // create alpha
+  double alpha_data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+  Map<Vector6d> alpha(alpha_data);
+
+  double step_size = .01;
+  double lambda = .5;
+  test_fit_logistic_proximal_gradient_coordinate_descent(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
+}
+
+int main() {
+  // test_random_gen();
+  // bench();
+
+  test_regression();
+  //test_regression_prostate();
+
+  test_logistic_regression();
+}
+
+
+
