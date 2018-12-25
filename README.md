@@ -33,6 +33,8 @@ References
 ---------
 This project began as a STAT8053 at the University of Minnesota.
 
+Ga\"{e}l Guennebaud and Beno\^{i}t Jacob and others. 2010. Eigen v3. http://eigen.tuxfamily.org
+
 Zou, Hui. “Regularization and variable selection via the elastic net.” (2004).
 
 Neal Parikh and Stephen Boyd. 2014. Proximal Algorithms. Found. Trends Optim. 1, 3 (January 2014), 127-239. DOI=10.1561/2400000003 http://dx.doi.org/10.1561/2400000003
