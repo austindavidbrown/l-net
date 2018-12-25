@@ -43,7 +43,7 @@ typedef struct {
 
   MatrixXd X;
   VectorXd y;
-  Vector6d alpha;
+  Matrix<double, 6, 1> alpha;
 
   int K_fold;
   int max_iter;
@@ -134,7 +134,7 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   // Setup
   const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
   const Map<VectorXd> y(data_ptr_arg_y, nrow_y);
-  const Map<Vector6d> alpha(data_ptr_arg_alpha);
+  const Map<Matrix<double, 6, 1>> alpha(data_ptr_arg_alpha);
 
   // Assign to class
   self->X = X;
@@ -397,7 +397,7 @@ static int LnetFit_fit(LnetFitObject *self, PyObject *args, PyObject *kwargs) {
   // Setup
   const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
   const Map<VectorXd> y(data_ptr_arg_y, nrow_y);
-  const Map<Vector6d> alpha(data_ptr_arg_alpha);
+  const Map<Matrix<double, 6, 1>> alpha(data_ptr_arg_alpha);
 
 
   // TODO
