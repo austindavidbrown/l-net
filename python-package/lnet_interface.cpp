@@ -4,7 +4,9 @@ Reference:
   PySys_WriteStdout(std::to_string(self->max_iter).c_str());
 */
 
-// Change self->X and the X in CV it is confusing
+// TODO add classification to CV
+// TODO add classification to Fit
+// TODO: Change self->X and the X in CV it is confusing
 
 #include <math.h>
 #include <vector>
@@ -25,7 +27,11 @@ using std::cout;
 
 
 /*
-LnetCV python class
+===================================
+
+LnetCV python Fit class
+
+===================================
 */
 typedef struct {
   PyObject_HEAD
@@ -33,6 +39,7 @@ typedef struct {
   double best_lambda;
   VectorXd cv_risks;
   vector<double> cv_lambdas;
+  bool binary_classification;
 
   MatrixXd X;
   VectorXd y;
@@ -63,7 +70,7 @@ static void LnetCV_dealloc(LnetCVObject *self) {
 
 static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, PyObject* kwargs) {
   const char* keywords[] = {"X", "y", "alpha", "lambdas", 
-                            "K_fold", "max_iter", "tolerance", "random_seed", NULL};
+                            "K_fold", "objective", "max_iter", "tolerance", "random_seed", NULL};
 
   // Required arguments
   PyArrayObject* arg_y = NULL;
@@ -71,10 +78,14 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   PyArrayObject* arg_alpha = NULL;
   PyArrayObject* arg_lambdas = NULL;
 
+  // Optional arguments
+  char* arg_objective = (char *)"regression";
+
   // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!|O!iidi", (char**) keywords,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!|O!siidi", (char**) keywords,
                         &PyArray_Type, &arg_X, &PyArray_Type, &arg_y, &PyArray_Type, &arg_alpha, 
-                        &PyArray_Type, &arg_lambdas, &(self->K_fold), &(self->max_iter), &(self->tolerance), &(self->random_seed))) {
+                        &PyArray_Type, &arg_lambdas, &arg_objective,
+                        &(self->K_fold), &(self->max_iter), &(self->tolerance), &(self->random_seed))) {
     return -1;
   }
 
@@ -110,6 +121,16 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
     lambdas.assign(data_ptr_arg_lambdas, data_ptr_arg_lambdas + nrow_lambdas);
   }
 
+  // Handle objective
+  if (strcmp("classification:binary", arg_objective) == 0) {
+    self->binary_classification = true;
+  } else if (strcmp("regression", arg_objective) == 0) {
+    self->binary_classification = false;
+  } else {
+    PyErr_SetString(PyExc_ValueError, "Bad objective.");
+    return -1;
+  }
+
   // Setup
   const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
   const Map<VectorXd> y(data_ptr_arg_y, nrow_y);
@@ -119,6 +140,12 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   self->X = X;
   self->y = y;
   self->alpha = alpha;
+
+  // TODO classification
+  if (self->binary_classification) {
+    PySys_WriteStdout("classification hit");
+  } else {
+  }
 
   // CV
   CVType cv = cross_validation_proximal_gradient(self->X, self->y, self->K_fold, self->alpha, lambdas, self->max_iter, self->tolerance, self->random_seed);
@@ -190,11 +217,17 @@ static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObj
   const VectorXd B_0 = VectorXd::Zero(self->X.cols());
   const FitType fit = fit_proximal_gradient(B_0, self->X, self->y, self->alpha, self->best_lambda, self->max_iter, self->tolerance);
 
-  // Predict
-  const VectorXd pred = predict(X, fit.intercept, fit.B);
+  // TODO
+  VectorXd pred;
+  if (self->binary_classification) {
+    PySys_WriteStdout("classification hit");
+    pred = predict(X, fit.intercept, fit.B);
+  } else {
+    pred = predict(X, fit.intercept, fit.B);
+  }
 
   //
-  // Copy to Pythonc
+  // Copy to Python
   //
   long res_dims[1];
   res_dims[0] = pred.rows();
@@ -285,15 +318,18 @@ static PyTypeObject LnetCVType = {
 
 
 /*
+===================================
 
 Lnet python Fit class
 
+===================================
 */
 typedef struct {
   PyObject_HEAD
 
   VectorXd B;
   double intercept;
+  bool binary_classification;
 } LnetFitObject;
 
 static PyObject* LnetFit_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
@@ -311,7 +347,7 @@ static void LnetFit_dealloc(LnetFitObject *self) {
 
 static int LnetFit_fit(LnetFitObject *self, PyObject *args, PyObject *kwargs) {
   const char* keywords[] = {"X", "y", "alpha", "lambda_", 
-                      "max_iter", "tolerance", "random_seed", NULL};
+                            "objective", "max_iter", "tolerance", "random_seed", NULL};
 
   // Required arguments
   PyArrayObject* arg_y = NULL;
@@ -320,15 +356,16 @@ static int LnetFit_fit(LnetFitObject *self, PyObject *args, PyObject *kwargs) {
   double arg_lambda;
 
   // Optional arguments
+  char* arg_objective = (char *)"regression";
   int arg_max_iter = 10000;
   double arg_tolerance = pow(10, -6);
   int arg_random_seed = 0;
 
   // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!d|idi", (char**) keywords,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!d|sidi", (char**) keywords,
                         &PyArray_Type, &arg_X, &PyArray_Type, &arg_y, 
                         &PyArray_Type, &arg_alpha, &arg_lambda, 
-                        &arg_max_iter, &arg_tolerance, &arg_random_seed)) {
+                        &arg_objective, &arg_max_iter, &arg_tolerance, &arg_random_seed)) {
     return -1;
   }
 
@@ -347,18 +384,42 @@ static int LnetFit_fit(LnetFitObject *self, PyObject *args, PyObject *kwargs) {
   arg_alpha = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_alpha), NPY_DOUBLE, NPY_IN_ARRAY));
   double* data_ptr_arg_alpha = reinterpret_cast<double*>(arg_alpha->data);
 
+  // Handle objective
+  if (strcmp("classification:binary", arg_objective) == 0) {
+    self->binary_classification = true;
+  } else if (strcmp("regression", arg_objective) == 0) {
+    self->binary_classification = false;
+  } else {
+    PyErr_SetString(PyExc_ValueError, "Bad objective.");
+    return -1;
+  }
+
   // Setup
   const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
   const Map<VectorXd> y(data_ptr_arg_y, nrow_y);
   const Map<Vector6d> alpha(data_ptr_arg_alpha);
 
-  // Fit
-  const VectorXd B_0 = VectorXd::Zero(X.cols());
-  const FitType fit = fit_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
 
-  // Assign to the class
-  self->B = fit.B;
-  self->intercept = fit.intercept;
+  // TODO
+  if (self->binary_classification) {
+    PySys_WriteStdout("classification hit");
+
+    // Fit classification TODO
+    const VectorXd B_0 = VectorXd::Zero(X.cols());
+    const FitType fit = fit_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
+
+    // Assign to the class
+    self->B = fit.B;
+    self->intercept = fit.intercept;
+  } else {
+    // Fit regression
+    const VectorXd B_0 = VectorXd::Zero(X.cols());
+    const FitType fit = fit_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
+
+    // Assign to the class
+    self->B = fit.B;
+    self->intercept = fit.intercept;
+  }
 
   return 0;
 }
@@ -403,8 +464,16 @@ static PyObject* LnetFit_predict(LnetFitObject *self, PyObject *args, PyObject* 
   // Setup
   const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
 
-  // Predict
-  const VectorXd pred = predict(X, self->intercept, self->B);
+  // TODO
+  VectorXd pred;
+  if (self->binary_classification) {
+    PySys_WriteStdout("classification hit");
+    // Predict classification
+    pred = predict(X, self->intercept, self->B);
+  } else {
+    // Predict regression
+    pred = predict(X, self->intercept, self->B);
+  }
 
   //
   // Copy to Python

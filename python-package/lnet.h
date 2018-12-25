@@ -16,6 +16,7 @@ using std::vector;
 using std::sort;
 using std::cout;
 
+// TODo remove vector6d
 // TODO add some convergence logic?
 // TODO look into stopping criterion
 // TODO document purposeful fail silent lack of convergence

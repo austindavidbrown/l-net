@@ -34,7 +34,7 @@ alpha = np.array([1, 0, 0, 0, 0, 0])
 # Single fit test
 ###
 lambda_ = 1;
-fit = lnet.Fit(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_)
+fit = lnet.Fit(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_, objective = "classification:binary")
 print("Test MSE:", ((y_test - fit.predict(X = X_test))**2).mean())
 
 ###
