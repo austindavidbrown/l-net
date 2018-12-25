@@ -19,8 +19,7 @@ using std::sort;
 using std::cout;
 
 // TODO look into stopping criterion
-// TODO learn templates
-// TODO add simulation to testing
+// TODO finish simulation to testing
 
 // long double matrix, vector, scalar
 typedef long double ld;

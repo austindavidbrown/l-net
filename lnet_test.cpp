@@ -385,11 +385,59 @@ void test_logistic_regression() {
   -------
   )";
 
-  MatrixXd X_train = load_csv<MatrixXd>("data/X_train.csv");
-  VectorXd y_train = load_csv<MatrixXd>("data/binary_y_train.csv");
+  /*
+  Generate sparse data
+  */
+  int n = 1000;
+  int p = 10;
 
-  MatrixXd X_test = load_csv<MatrixXd>("data/X_test.csv");
-  VectorXd y_test = load_csv<MatrixXd>("data/binary_y_test.csv");
+  double SPLIT_RATIO = .8;
+  int SPARSITY_LEVEL = p / 2;
+
+  VectorXd mu = VectorXd::Zero(p);
+  MatrixXd E = MatrixXd::Identity(p, p);
+  Normal_Random_Variable normal_rv(mu, E);
+
+  double intercept = 5;
+  VectorXd B = VectorXd::Zero(p);
+  for (int i = 0; i < p; i++) {
+    B(i) = 3;  
+  }
+  for (int i = SPARSITY_LEVEL; i < p; i++) {
+    B(i) = 0;  
+  }
+
+  int n_TRAIN = SPLIT_RATIO * n;
+  int n_TEST = (1 - SPLIT_RATIO) * n;
+
+  MatrixXd X_train(n_TRAIN, p);
+  for (int i = 0; i < n_TRAIN; i++) {
+    X_train.row(i) = normal_rv().transpose();
+  }
+
+  std::mt19937 rng(std::random_device{}());
+  
+  VectorXd y_train = VectorXd(n_TRAIN);
+  for (int i = 0; i < n_TRAIN; i++) {
+    double p = pow(1 + exp(-1 * (intercept + X_train.row(i) * B)), -1);
+    std::binomial_distribution<int> binom_dist(1, p);
+    y_train(i) = binom_dist(rng);
+  }
+
+  MatrixXd X_test(n_TEST, p);
+  for (int i = 0; i < n_TEST; i++) {
+    X_test.row(i) = normal_rv().transpose();
+  }
+  VectorXd y_test = VectorXd(n_TEST);
+  for (int i = 0; i < n_TEST; i++) {
+    double p = pow(1 + exp(-1 * (intercept + X_test.row(i) * B)), -1);
+    std::binomial_distribution<int> binom_dist(1, p);
+    y_test(i) = binom_dist(rng);
+  }
+  /*
+  END Generate sparse data
+  */
+
 
   // create alpha
   double alpha_data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
@@ -408,7 +456,6 @@ int main() {
   //test_regression_prostate();
 
   test_logistic_regression();
-
 
 }
 
