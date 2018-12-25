@@ -1,7 +1,7 @@
 # TODO copy lnet into the python-package
 
 develop:
-	clang++ -Wall -Wextra -std=c++17 -I./include/eigen/ test.cpp -O3 -march=native -mfpmath=sse -o test
+	clang++ -Wall -Wextra -std=c++17 -I./include/eigen/ test.cpp -O3 -march=native -o test
 	./test
 	cp lnet.h ./python-package/lnet.h
 

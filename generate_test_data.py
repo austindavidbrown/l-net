@@ -35,13 +35,13 @@ np.savetxt("data/y_test.csv", np.asarray(y_test), delimiter=",")
 ###
 p = 1/(1 + np.exp(-1 * y))
 
-z = np.zeros(n)
+binary_y = np.zeros(n)
 for i in range(0, n):
-  z[i] = np.random.binomial(1, p[i])
+  binary_y[i] = np.random.binomial(1, p[i])
 
-z_train = z[TRAIN]
-z_test = z[TEST]
+binary_y_train = binary_y[TRAIN]
+binary_y_test = binary_y[TEST]
 
-np.savetxt("data/z_train.csv", np.asarray(z_test), delimiter=",", fmt = "%i")
-np.savetxt("data/z_test.csv", np.asarray(z_test), delimiter=",", fmt = "%i")
+np.savetxt("data/binary_y_train.csv", np.asarray(binary_y_train), delimiter=",", fmt = "%i")
+np.savetxt("data/binary_y_test.csv", np.asarray(binary_y_test), delimiter=",", fmt = "%i")
 
