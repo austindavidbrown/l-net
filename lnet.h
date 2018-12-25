@@ -25,8 +25,6 @@ typedef long double ld;
 typedef Matrix<long double, Dynamic, Dynamic> MatrixXld;
 typedef Matrix<long double, Dynamic, 1> VectorXld;
 
-typedef Matrix<double, 6, 1> Vector6d;
-
 struct FitType {
   double intercept;
   VectorXd B;
@@ -86,7 +84,7 @@ Proximal Gradient Descent Regression
 */
 
 FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
-                              const Vector6d& alpha, const double lambda,
+                              const Matrix<double, 6, 1>& alpha, const double lambda,
                               const int max_iter, const double tolerance) {
   VectorXd B = B_0; // create return value
   const int n = X.rows();
@@ -161,7 +159,7 @@ FitType fit_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const Vect
 // Returns a vector of B corresponding to lambdas using warm-start.
 // We do not sort the lambdas here, they are ordered how you want them
 vector<FitType> fit_warm_start_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
-                                         const Vector6d& alpha, const vector<double>& lambdas,
+                                         const Matrix<double, 6, 1>& alpha, const vector<double>& lambdas,
                                          const int max_iter, const double tolerance) {
   const int p = X.cols();
   const int L = lambdas.size();
@@ -181,7 +179,7 @@ vector<FitType> fit_warm_start_proximal_gradient(const MatrixXd& X, const Vector
 }
 
 CVType cross_validation_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
-                                             const double K_fold, const Vector6d& alpha, const vector<double>& arg_lambdas,
+                                             const double K_fold, const Matrix<double, 6, 1>& alpha, const vector<double>& arg_lambdas,
                                              const int max_iter, const double tolerance, const int random_seed) {
   int n = X.rows();
   int p = X.cols();
@@ -256,7 +254,7 @@ Proximal Gradient Coordinate Descent
 
 */
 FitType fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
-                              const Vector6d& alpha, const double lambda, const double step_size,
+                              const Matrix<double, 6, 1>& alpha, const double lambda, const double step_size,
                               const int max_iter, const double tolerance, const int random_seed) {
   VectorXd B = B_0; // create return value
   const int n = X.rows();
@@ -320,7 +318,7 @@ FitType fit_proximal_gradient_cd(const VectorXd& B_0, const MatrixXd& X, const V
 // Returns a vector of B corresponding to lambdas using warm-start.
 // We do not sort the lambdas here, they are ordered how you want them
 vector<FitType> fit_warm_start_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
-                                         const Vector6d& alpha, const vector<double>& lambdas, const double step_size,
+                                         const Matrix<double, 6, 1>& alpha, const vector<double>& lambdas, const double step_size,
                                          const int max_iter, const double tolerance, const int random_seed) {
   const int p = X.cols();
   const int L = lambdas.size();
@@ -341,7 +339,7 @@ vector<FitType> fit_warm_start_proximal_gradient_cd(const MatrixXd& X, const Vec
 
 // Prox Gradient Cross Validation
 CVType cross_validation_proximal_gradient_cd(const MatrixXd& X, const VectorXd& y, 
-                                             const double K_fold, const Vector6d& alpha, const vector<double>& arg_lambdas, const double step_size,
+                                             const double K_fold, const Matrix<double, 6, 1>& alpha, const vector<double>& arg_lambdas, const double step_size,
                                              const int max_iter, const double tolerance, const int random_seed) {
   int n = X.rows();
   int p = X.cols();

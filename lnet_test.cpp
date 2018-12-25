@@ -73,7 +73,7 @@ Regression tests
 /*
 Tests for proximal gradient descent with line search
 */
-void test_fit_proximal_gradient(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, double lambda) {
+void test_fit_proximal_gradient(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Matrix<double, 6, 1> alpha, double lambda) {
   cout << R"(
   Test fit_proximal_gradient
   -------
@@ -92,7 +92,7 @@ void test_fit_proximal_gradient(MatrixXd& X_train, VectorXd& y_train, MatrixXd& 
   cout << "\nTest MSE: " << mean_squared_error(y_test, predict(X_test, fit.intercept, fit.B)) << "\n";
 }
 
-void test_fit_warm_start_proximal_gradient(MatrixXd& X, VectorXd& y, Vector6d alpha, vector<double> lambdas) {
+void test_fit_warm_start_proximal_gradient(MatrixXd& X, VectorXd& y, Matrix<double, 6, 1> alpha, vector<double>& lambdas) {
   cout << R"(
   Test fit_warm_start_proximal_gradient
   -------
@@ -107,7 +107,7 @@ void test_fit_warm_start_proximal_gradient(MatrixXd& X, VectorXd& y, Vector6d al
   cout << "\nlast fit B:\n" << last_fit.B << "\n";
 }
 
-void test_cross_validation_proximal_gradient(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, vector<double> lambdas, int K_fold) {
+void test_cross_validation_proximal_gradient(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Matrix<double, 6, 1> alpha, vector<double>& lambdas, int K_fold) {
   cout << R"(
   Test cross_validation_proximal_gradient
   -------
@@ -141,7 +141,7 @@ void test_cross_validation_proximal_gradient(MatrixXd& X_train, VectorXd& y_trai
 /*
 Tests for proximal gradient coordinate descent
 */
-void test_fit_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, double lambda, double step_size) {
+void test_fit_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Matrix<double, 6, 1> alpha, double lambda, double step_size) {
   cout << R"(
   Test fit_proximal_gradient_cd
   -------
@@ -161,7 +161,7 @@ void test_fit_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixX
   cout << "\nTest MSE: " << mean_squared_error(y_test, predict(X_test, fit.intercept, fit.B)) << "\n";
 }
 
-void test_fit_warm_start_proximal_gradient_cd(MatrixXd& X, VectorXd& y, Vector6d alpha, vector<double> lambdas, double step_size) {
+void test_fit_warm_start_proximal_gradient_cd(MatrixXd& X, VectorXd& y, Matrix<double, 6, 1> alpha, vector<double>& lambdas, double step_size) {
   cout << R"(
   Test fit_warm_start_proximal_gradient_cd
   -------
@@ -177,7 +177,7 @@ void test_fit_warm_start_proximal_gradient_cd(MatrixXd& X, VectorXd& y, Vector6d
   cout << "\nlast fit B:\n" << last_fit.B << "\n";
 }
 
-void test_cross_validation_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, vector<double> lambdas, double step_size, int K_fold) {
+void test_cross_validation_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Matrix<double, 6, 1> alpha, vector<double>& lambdas, double step_size, int K_fold) {
   cout << R"(
   Test cross_validation_proximal_gradient_cd
   -------
@@ -217,7 +217,7 @@ void test_regression() {
 
   // create alpha
   double alpha_data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-  Map<Vector6d> alpha(alpha_data);
+  Map<Matrix<double, 6, 1>> alpha(alpha_data);
 
   double step_size = 1/((double) 10000);
 
@@ -257,7 +257,7 @@ void test_regression_prostate() {
 
   // create alpha
   double alpha_data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-  Map<Vector6d> alpha(alpha_data);
+  Map<Matrix<double, 6, 1>> alpha(alpha_data);
 
   double step_size = 1.0f/((double) 80);
 
@@ -304,7 +304,7 @@ Classification tests
 */
 
 
-void test_fit_logistic_proximal_gradient_coordinate_descent(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Vector6d alpha, double lambda, double step_size) {
+void test_fit_logistic_proximal_gradient_coordinate_descent(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Matrix<double, 6, 1> alpha, double lambda, double step_size) {
   cout << R"(
   Test fit_logistic_proximal_gradient_coordinate_descent
   -------
@@ -335,7 +335,7 @@ void test_logistic_regression() {
 
   // create alpha
   double alpha_data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-  Map<Vector6d> alpha(alpha_data);
+  Map<Matrix<double, 6, 1>> alpha(alpha_data);
 
   double step_size = .01;
   double lambda = .5;

@@ -7,6 +7,7 @@ Reference:
 // TODO add classification to CV
 // TODO add classification to Fit
 // TODO: Change self->X and the X in CV it is confusing
+// TODO: fix CV to where it doesn't fit on predict
 
 #include <math.h>
 #include <vector>
