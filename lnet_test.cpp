@@ -1,5 +1,9 @@
 /*
 Testing for lnet
+
+Reference:
+Print higher precision
+std::cout << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
 */
 
 #include <time.h>
@@ -13,6 +17,26 @@ Testing for lnet
 
 using namespace Eigen;
 using std::cout;
+
+// Sample multivariate normal random variable
+struct Normal_Random_Variable {
+  VectorXd mean;
+  MatrixXd transform;
+
+  Normal_Random_Variable(const VectorXd& mean, const MatrixXd& covar) {
+    this->mean = mean;
+
+    SelfAdjointEigenSolver<MatrixXd> eigenSolver(covar);
+    transform = eigenSolver.eigenvectors() * eigenSolver.eigenvalues().cwiseSqrt().asDiagonal();
+  }
+
+  const VectorXd operator()() {
+    static std::mt19937 gen(std::random_device{}());
+    static std::normal_distribution<> dist;
+
+    return mean + transform * VectorXd(mean.size()).unaryExpr([&](double x) { return dist(gen); });
+  }
+};
 
 // CV parser
 template<typename M>
@@ -73,7 +97,7 @@ Regression tests
 /*
 Tests for proximal gradient descent with line search
 */
-void test_fit_proximal_gradient(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Matrix<double, 6, 1> alpha, double lambda) {
+void test_fit_proximal_gradient(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, const Matrix<double, 6, 1>& alpha, double lambda) {
   cout << R"(
   Test fit_proximal_gradient
   -------
@@ -208,12 +232,46 @@ void test_cross_validation_proximal_gradient_cd(MatrixXd& X_train, VectorXd& y_t
 }
 
 void test_regression() {
-  //std::cout << std::setprecision(std::numeric_limits<long double>::digits10 + 1); // set precision
+  /*
+  Generate sparse data
+  */
+  int n = 1000;
+  int p = 10;
 
-  MatrixXd X_train = load_csv<MatrixXd>("data/X_train.csv");
-  VectorXd y_train = load_csv<MatrixXd>("data/y_train.csv");
-  MatrixXd X_test = load_csv<MatrixXd>("data/X_test.csv");
-  VectorXd y_test = load_csv<MatrixXd>("data/y_test.csv");
+  double SPLIT_RATIO = .8;
+  int SPARSITY_LEVEL = p / 2;
+
+  VectorXd mu = VectorXd::Zero(p);
+  MatrixXd E = MatrixXd::Identity(p, p);
+  Normal_Random_Variable normal_rv(mu, E);
+
+  double intercept = 5;
+  VectorXd B = VectorXd::Zero(p);
+  for (int i = 0; i < p; i++) {
+    B(i) = 3;  
+  }
+  for (int i = SPARSITY_LEVEL; i < p; i++) {
+    B(i) = 0;  
+  }
+
+  int n_TRAIN = SPLIT_RATIO * n;
+  int n_TEST = (1 - SPLIT_RATIO) * n;
+
+  MatrixXd X_train(n_TRAIN, p);
+  for (int i = 0; i < n_TRAIN; i++) {
+    X_train.row(i) = normal_rv().transpose();
+  }
+  VectorXd y_train = intercept * VectorXd::Ones(n_TRAIN) + X_train * B;
+
+  MatrixXd X_test(n_TEST, p);
+  for (int i = 0; i < n_TEST; i++) {
+    X_test.row(i) = normal_rv().transpose();
+  }
+  VectorXd y_test = intercept * VectorXd::Ones(n_TEST) + X_test * B;
+  /*
+  End Generate sparse data
+  */
+
 
   // create alpha
   double alpha_data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
@@ -350,6 +408,8 @@ int main() {
   //test_regression_prostate();
 
   test_logistic_regression();
+
+
 }
 
 
