@@ -370,7 +370,23 @@ void test_fit_logistic_proximal_gradient_coordinate_descent(MatrixXd& X_train, V
 
   VectorXd B_0 = VectorXd::Zero(X_train.cols());
   FitType fit = fit_logistic_proximal_gradient_coordinate_descent(B_0, X_train, y_train, alpha, lambda, step_size, 
-                                                                       10000, pow(10, -6), 0);
+                                                                       10000, pow(10, -6));
+
+  cout << "\nintercept:\n" << fit.intercept << "\n";
+  cout << "\nB:\n" << fit.B << "\n";
+
+  cout << "\nTrain accuracy : " << accuracy(y_train, predict_class(X_train, fit.intercept, fit.B)) << "\n";
+  cout << "\nTest accuracy: " << accuracy(y_test, predict_class(X_test, fit.intercept, fit.B)) << "\n";
+}
+
+void test_fit_logistic_proximal_gradient(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, const Matrix<double, 6, 1>& alpha, double lambda) {
+  cout << R"(
+  Test fit_logistic_proximal_gradient
+  -------
+  )";
+
+  VectorXd B_0 = VectorXd::Zero(X_train.cols());
+  FitType fit = fit_logistic_proximal_gradient(B_0, X_train, y_train, alpha, lambda, 10000, pow(10, -6));
 
   cout << "\nintercept:\n" << fit.intercept << "\n";
   cout << "\nB:\n" << fit.B << "\n";
@@ -445,14 +461,16 @@ void test_logistic_regression() {
 
   double step_size = .01;
   double lambda = .5;
-  test_fit_logistic_proximal_gradient_coordinate_descent(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
+  //test_fit_logistic_proximal_gradient_coordinate_descent(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
+
+  test_fit_logistic_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambda);
 }
 
 int main() {
   // test_random_gen();
   // bench();
 
-  test_regression();
+  //test_regression();
   //test_regression_prostate();
 
   test_logistic_regression();

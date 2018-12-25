@@ -428,6 +428,19 @@ double sigmoid(const double x) {
   return pow(1 + exp(-1 * x), -1);
 }
 
+// We purposefully use doubles
+double accuracy(const VectorXd& v, const VectorXd& w) {
+  if (v.rows() != w.rows()) {
+    throw std::invalid_argument("Vectors must be the same length.");
+  }
+  const int n = v.rows();
+  double m = 0;
+  for (int i = 0; i < n; i++) {
+    m += (v(i) == w(i));
+  }
+  return 1.0/((double)n) * m;
+}
+
 VectorXd predict_class(const MatrixXd& X, const double intercept, const VectorXd& B) {
   const int n = X.rows();
   VectorXd pred = VectorXd::Zero(n);
@@ -452,22 +465,9 @@ VectorXd predict_prob(const MatrixXd& X, const double intercept, const VectorXd&
   return pred_prob;
 }
 
-// We purposefully use doubles
-double accuracy(const VectorXd& v, const VectorXd& w) {
-  if (v.rows() != w.rows()) {
-    throw std::invalid_argument("Vectors must be the same length.");
-  }
-  const int n = v.rows();
-  double m = 0;
-  for (int i = 0; i < n; i++) {
-    m += (v(i) == w(i));
-  }
-  return 1.0/((double)n) * m;
-}
-
 FitType fit_logistic_proximal_gradient_coordinate_descent(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
                               const Matrix<double, 6, 1>& alpha, const double lambda, const double step_size,
-                              const int max_iter, const double tolerance, const int random_seed) {
+                              const int max_iter, const double tolerance) {
   FitType fit; // return value
 
   const int n = X.rows();
@@ -529,6 +529,85 @@ FitType fit_logistic_proximal_gradient_coordinate_descent(const VectorXd& B_0, c
 }
 
 
+FitType fit_logistic_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
+                              const Matrix<double, 6, 1>& alpha, const double lambda,
+                              const int max_iter, const double tolerance) {
+  FitType fit; // return value
+
+  const int n = X.rows();
+  const int p = X.cols();
+
+  // Create return values
+  VectorXd B = B_0;
+  double intercept = 0;
+  for (int j = 0; j < max_iter; j++) {
+    // Keep track of the current values
+    const VectorXd B_old = B;
+    const double intercept_old = intercept;
+
+    // Compute once and store
+    VectorXd sigmoid_intercept_XB = VectorXd::Zero(n);
+    for (int i = 0; i < n; i++) {
+      sigmoid_intercept_XB(i) = sigmoid(intercept + X.row(i) * B_old);
+    }
+
+    /*
+    Compute the derivative of f
+    */
+    double Df_intercept = VectorXd::Ones(n).transpose() * (y - sigmoid_intercept_XB);
+    VectorXd Df = VectorXd::Zero(p); // Derivative of loss + differentiable penalizations
+    for (int i = 0; i < p; i++) {
+      Df(i) = X.col(i).transpose() * (y - sigmoid_intercept_XB);
+    }
+
+    bool line_searching = true;
+    double h_j = .5; // initial step size
+    while (line_searching) {
+      // Update intercept
+      intercept = intercept_old + h_j * Df_intercept;
+
+      // Update the rest with penalization
+      for (int i = 0; i < p; i++) {
+        // Proximal Mapping: Soft Thresholding
+        const double v_i = B_old(i) + h_j * Df(i); // gradient step
+        if (v_i < -h_j * alpha(0) * lambda) {
+          B(i) = v_i + h_j * alpha(0) * lambda;
+        } else if (v_i >= -h_j * alpha(0) * lambda && v_i <= h_j * alpha(0) * lambda) {
+          B(i) = 0;
+        } else if (v_i > h_j * alpha(0) * lambda) {
+          B(i) = v_i - h_j * alpha(0) * lambda;
+        }
+      }
+
+      // Check if the the step size is small enough for descent
+      double f_B_old = 0;
+      double f_B = 0;
+      for (int i = 0; i < n; i++) {
+        f_B_old += y(i) * log(sigmoid(intercept + X.row(i) * B_old)) + (1 - y(i)) * log(1 - sigmoid(intercept + X.row(i) * B_old));
+        f_B += y(i) * log(sigmoid(intercept + X.row(i) * B)) + (1 - y(i)) * log(1 - sigmoid(intercept + X.row(i) * B));
+      }
+      if ( -f_B <= -f_B_old - Df_intercept * (intercept - intercept_old) - Df.transpose() * (B - B_old) + 1.0/((double)2.0 * h_j) * ( pow(intercept - intercept_old, 2) + (B - B_old).squaredNorm() ) ) {
+        line_searching = false; // break
+      } else {
+        h_j = .5 * h_j; // half step size
+      }
+    }
+
+    // Stopping criterion
+    if ( pow(intercept - intercept_old, 2) + (B - B_old).squaredNorm() < tolerance ) {
+      // Build return value
+      fit.intercept = intercept;
+      fit.B = B;
+      return fit;
+    }
+  }
+
+  std::cout << "Failed to converge! Tune the step size.\n";
+  // Build return
+  fit.intercept = intercept;
+  fit.B = B;
+  return fit;
+}
 
 
 
