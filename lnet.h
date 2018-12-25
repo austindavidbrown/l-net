@@ -19,7 +19,7 @@ using std::sort;
 using std::cout;
 
 // TODO look into stopping criterion
-// TODO finish simulation to testing
+// TODO add normalize matrix and remove the centering logic in the optimization
 
 // long double matrix, vector, scalar
 typedef long double ld;
@@ -39,6 +39,15 @@ struct CVType {
 //
 // Utils
 //
+MatrixXd standardize(MatrixXd M) {
+  const int n = M.rows();
+  const int m = M.cols();
+  for (int j = 0; j < m; j++) {
+    M.col(j) = (M.col(j) - M.col(j).mean() * VectorXd::Ones(n)).normalized();
+  }
+  return M;
+}
+
 double mean_squared_error(const VectorXd& v, const VectorXd& w) {
   return 1/((double)v.rows()) * (v - w).squaredNorm(); 
 }
