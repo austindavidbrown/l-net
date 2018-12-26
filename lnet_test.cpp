@@ -280,14 +280,14 @@ void test_regression() {
   double step_size = 1/((double) 10000);
 
   //
-  // fit test
+  // Fit test
   //
   double lambda = .1;
   test_fit_regression_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambda);
   test_fit_regression_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
 
   //
-  // warm start test
+  // Warm start test
   //
   // create lambdas
   vector<double> lambdas;
@@ -301,37 +301,34 @@ void test_regression() {
   //
   // CV test
   //
-  int K_fold = 10;
-  test_cross_validation_regression_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambdas, K_fold);
-  test_cross_validation_regression_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
+  test_cross_validation_regression_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambdas, 10);
+  test_cross_validation_regression_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, 10);
 }
 
 void test_regression_prostate() {
   MatrixXd X_train = load_csv<MatrixXd>("data/prostate_X_train.csv");
   VectorXd y_train = load_csv<MatrixXd>("data/prostate_y_train.csv");
-
   MatrixXd X_test = load_csv<MatrixXd>("data/prostate_X_test.csv");
   VectorXd y_test = load_csv<MatrixXd>("data/prostate_y_test.csv");
 
-  // create alpha
+  // Create parameters
   double alpha_data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
   Map<Matrix<double, 6, 1>> alpha(alpha_data);
-
   double step_size = 1.0f/((double) 80);
 
   //
-  // fit test
+  // Fit test
   //
   double lambda = 11;
   test_fit_regression_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambda);
   test_fit_regression_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
 
   //
-  // warm start test
+  // Warm start test
   //
   // create lambdas
   vector<double> lambdas;
-  lambdas.push_back(pow(10, -3));
+  lambdas.push_back(X_train.cols());
   for (int i = 1; i < 10; i++) {
     lambdas.push_back(lambdas[i - 1] + .1);
   }
@@ -339,17 +336,11 @@ void test_regression_prostate() {
   test_fit_regression_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size);
 
   //
-  // cv test
+  // CV test
   //
-  int K_fold = 10;
-  test_cross_validation_regression_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambdas, K_fold);
-  test_cross_validation_regression_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, K_fold);
+  test_cross_validation_regression_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambdas, 10);
+  test_cross_validation_regression_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambdas, step_size, 10);
 }
-
-
-
-
-
 
 
 /*
@@ -359,7 +350,6 @@ Classification tests
 
 ================================
 */
-
 
 void test_fit_logistic_proximal_gradient_coordinate_descent(MatrixXd& X_train, VectorXd& y_train, MatrixXd& X_test, VectorXd& y_test, Matrix<double, 6, 1> alpha, double lambda, double step_size) {
   cout << R"(
@@ -485,12 +475,11 @@ void test_logistic_regression() {
   END Generate sparse data
   */
 
-
-  // Create alpha
+  // Create parameters
   double alpha_data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
   Map<Matrix<double, 6, 1>> alpha(alpha_data);
-
   double lambda = .5;
+
   // test_fit_logistic_proximal_gradient_coordinate_descent(X_train, y_train, X_test, y_test, alpha, lambda, .01);
   test_fit_logistic_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambda);
 
@@ -510,9 +499,9 @@ int main() {
   // bench();
 
   test_regression();
-  // test_logistic_regression();
+  test_logistic_regression();
 
-  //test_regression_prostate();
+  // test_regression_prostate();
 }
 
 

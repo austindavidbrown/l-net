@@ -19,7 +19,6 @@ using std::sort;
 using std::cout;
 
 // TODO look into stopping criterion
-// TODO remove the centering logic in the optimization
 
 struct FitType {
   double intercept;
