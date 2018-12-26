@@ -180,10 +180,10 @@ vector<FitType> fit_regression_warm_start_proximal_gradient(const MatrixXd& X, c
 CVType cross_validation_regression_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
                                              const double K_fold, const Matrix<double, 6, 1>& alpha, const vector<double>& arg_lambdas,
                                              const int max_iter, const double tolerance, const int random_seed) {
-  int n = X.rows();
-  int p = X.cols();
+  const int n = X.rows();
+  const int p = X.cols();
   vector<double> lambdas = arg_lambdas; // copy argument
-  int L = lambdas.size();
+  const int L = lambdas.size();
   MatrixXd test_risks_matrix = MatrixXd::Zero(L, K_fold);
 
   sort(lambdas.begin(), lambdas.end(), std::greater<double>()); // sort the lambdas in place descending
@@ -249,7 +249,7 @@ CVType cross_validation_regression_proximal_gradient(const MatrixXd& X, const Ve
 /*
 ================================
 
-Lnet Proximal Gradient Classification
+Lnet Proximal Gradient Binary Classification
 
 ================================
 */
@@ -401,7 +401,71 @@ vector<FitType> fit_logistic_warm_start_proximal_gradient(const MatrixXd& X, con
 }
 
 
+CVType cross_validation_logistic_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
+                                             const double K_fold, const Matrix<double, 6, 1>& alpha, const vector<double>& arg_lambdas,
+                                             const int max_iter, const double tolerance, const int random_seed) {
+  const int n = X.rows();
+  const int p = X.cols();
+  vector<double> lambdas = arg_lambdas; // copy argument
+  const int L = lambdas.size();
+  MatrixXd test_risks_matrix = MatrixXd::Zero(L, K_fold);
 
+  sort(lambdas.begin(), lambdas.end(), std::greater<double>()); // sort the lambdas in place descending
+
+  // Create random permutation using the Mersenne twister random number engine 64 bit
+  vector<int> I(n);
+  std::iota (std::begin(I), std::end(I), 0);
+  std::mt19937_64 rng(random_seed);
+  std::shuffle(std::begin(I), std::end(I), rng); // permute
+
+  vector<vector<int>> partitions = partition(I, K_fold);
+  for (size_t k = 0; k < partitions.size(); k++) {
+    vector<int> TEST = partitions[k];
+
+    // Build training indices
+    vector<int> TRAIN;
+    for (int& i : I) {
+      bool exists = false;
+      for (int& j : TEST) {
+        if (j == i) {
+          exists = true;
+        }
+      }
+      if (exists == false) {
+        TRAIN.push_back(i);
+      }
+    }
+
+    // Build X_train, y_train
+    MatrixXd X_train = MatrixXd(TRAIN.size(), p);
+    VectorXd y_train = VectorXd(TRAIN.size());
+    for (size_t i = 0; i < TRAIN.size(); i++) {
+      X_train.row(i) = X.row(TRAIN[i]);
+      y_train.row(i) = y.row(TRAIN[i]);
+    }
+
+    // Build X_test, y_test
+    MatrixXd X_test = MatrixXd(TEST.size(), p);
+    VectorXd y_test = VectorXd(TEST.size());
+    for (size_t i = 0; i < TEST.size(); i++) {
+      X_test.row(i) = X.row(TEST[i]);
+      y_test.row(i) = y.row(TEST[i]);
+    }
+
+    // Do the computation
+    const vector<FitType> fit_vector = fit_logistic_warm_start_proximal_gradient(X_train, y_train, alpha, lambdas, max_iter, tolerance);
+    for (size_t l = 0; l < fit_vector.size(); l++) {
+      const FitType fit = fit_vector.at(l);
+      test_risks_matrix(l, k) = accuracy(y_test, predict_class(X_test, fit.intercept, fit.B));
+    }
+  }
+
+  // build return
+  CVType cv;
+  cv.risks = test_risks_matrix.rowwise().mean();
+  cv.lambdas = lambdas;
+  return cv;
+}
 
 
 
