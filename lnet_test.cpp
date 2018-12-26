@@ -22,18 +22,18 @@ using std::cout;
 struct Normal_Random_Variable {
   VectorXd mean;
   MatrixXd transform;
+  double random_seed;
 
-  Normal_Random_Variable(const VectorXd& mean, const MatrixXd& covar) {
+  Normal_Random_Variable(const VectorXd& mean, const MatrixXd& covar, double random_seed) {
     this->mean = mean;
-
     SelfAdjointEigenSolver<MatrixXd> eigenSolver(covar);
     transform = eigenSolver.eigenvectors() * eigenSolver.eigenvalues().cwiseSqrt().asDiagonal();
+    this->random_seed = random_seed;
   }
 
   const VectorXd operator()() {
-    static std::mt19937 gen(std::random_device{}());
+    static std::mt19937 gen(random_seed);
     static std::normal_distribution<> dist;
-
     return mean + transform * VectorXd(mean.size()).unaryExpr([&](double x) { return dist(gen); });
   }
 };
@@ -243,7 +243,7 @@ void test_regression() {
 
   VectorXd mu = VectorXd::Zero(p);
   MatrixXd E = MatrixXd::Identity(p, p);
-  Normal_Random_Variable normal_rv(mu, E);
+  Normal_Random_Variable normal_rv(mu, E, std::random_device{}());
 
   double intercept = 5;
   VectorXd B = VectorXd::Zero(p);
@@ -443,7 +443,7 @@ void test_logistic_regression() {
 
   VectorXd mu = VectorXd::Zero(p);
   MatrixXd E = MatrixXd::Identity(p, p);
-  Normal_Random_Variable normal_rv(mu, E);
+  Normal_Random_Variable normal_rv(mu, E, std::random_device{}());
 
   double intercept = 5;
   VectorXd B = VectorXd::Zero(p);
