@@ -272,30 +272,20 @@ LnetCV python class
 typedef struct {
   PyObject_HEAD
 
+  VectorXd B;
+  double intercept;
+  bool binary_classification;
+
   double best_lambda;
   VectorXd cv_risks;
   vector<double> cv_lambdas;
-  bool binary_classification;
-
-  MatrixXd X;
-  VectorXd y;
-  Matrix<double, 6, 1> alpha;
-
-  int K_fold;
-  int max_iter;
-  double tolerance;
-  int random_seed;
 } LnetCVObject;
 
 static PyObject* LnetCV_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     LnetCVObject *self;
     self = (LnetCVObject *) type->tp_alloc(type, 0);
     if (self != NULL) {
-      // Set default values
-      self->K_fold = 10;
-      self->max_iter = 10000;
-      self->tolerance = pow(10, -6);
-      self->random_seed = 0;
+      // Initialization goes here
     }
     return (PyObject *) self;
 }
@@ -315,13 +305,17 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   PyArrayObject* arg_lambdas = NULL;
 
   // Optional arguments
+  int arg_K_fold = 10;
   char* arg_objective = (char *)"regression";
+  int arg_max_iter = 10000;
+  double arg_tolerance = pow(10, -6);
+  int arg_random_seed = 0;
 
   // Parse arguments
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!|O!isidi", (char**) keywords,
                         &PyArray_Type, &arg_X, &PyArray_Type, &arg_y, &PyArray_Type, &arg_alpha, 
                         &PyArray_Type, &arg_lambdas,
-                        &(self->K_fold), &arg_objective, &(self->max_iter), &(self->tolerance), &(self->random_seed))) {
+                        &arg_K_fold, &arg_objective, &arg_max_iter, &arg_tolerance, &arg_random_seed)) {
     return -1;
   }
 
@@ -372,16 +366,11 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   const Map<VectorXd> y(data_ptr_arg_y, nrow_y);
   const Map<Matrix<double, 6, 1>> alpha(data_ptr_arg_alpha);
 
-  // Assign to class
-  self->X = X;
-  self->y = y;
-  self->alpha = alpha;
-
   CVType cv;
   if (self->binary_classification) {
-    cv = cross_validation_logistic_proximal_gradient(self->X, self->y, self->K_fold, self->alpha, lambdas, self->max_iter, self->tolerance, self->random_seed);
+    cv = cross_validation_logistic_proximal_gradient(X, y, arg_K_fold, alpha, lambdas, arg_max_iter, arg_tolerance, arg_random_seed);
   } else {
-    cv = cross_validation_regression_proximal_gradient(self->X, self->y, self->K_fold, self->alpha, lambdas, self->max_iter, self->tolerance, self->random_seed);
+    cv = cross_validation_regression_proximal_gradient(X, y, arg_K_fold, alpha, lambdas, arg_max_iter, arg_tolerance, arg_random_seed);
   }
 
   // Get location of best lambda
@@ -392,6 +381,24 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   self->best_lambda = cv.lambdas[min_row];
   self->cv_risks = cv.risks;
   self->cv_lambdas = cv.lambdas;
+
+  //
+  // Fit
+  //
+  FitType best_fit;
+  const VectorXd B_0 = VectorXd::Zero(X.cols());
+  if (self->binary_classification) {
+    // Fit binary classification
+    best_fit = fit_logistic_proximal_gradient(B_0, X, y, alpha, self->best_lambda, arg_max_iter, arg_tolerance);
+  } else {
+    // Fit regression
+    best_fit = fit_regression_proximal_gradient(B_0, X, y, alpha, self->best_lambda, arg_max_iter, arg_tolerance);
+  }
+
+  // Assign to the class
+  self->B = best_fit.B;
+  self->intercept = best_fit.intercept;
+
   return 0;
 }
 
@@ -447,25 +454,19 @@ static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObj
   // Setup
   const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
 
-  // Fit
-  const VectorXd B_0 = VectorXd::Zero(self->X.cols());
-  const FitType fit = fit_regression_proximal_gradient(B_0, self->X, self->y, self->alpha, self->best_lambda, self->max_iter, self->tolerance);
-
   VectorXd pred;
   if (self->binary_classification) {
-    pred = predict_prob(X, fit.intercept, fit.B);
+    // Predict classification
+    pred = predict_prob(X, self->intercept, self->B);
   } else {
-    pred = predict_regression(X, fit.intercept, fit.B);
+    // Predict regression
+    pred = predict_regression(X, self->intercept, self->B);
   }
 
-  //
-  // Copy to Python
-  //
   long res_dims[1];
   res_dims[0] = pred.rows();
-  PyArrayObject* res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_dims, NPY_DOUBLE)); // 1 is for vector
+  PyArrayObject* res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_dims, NPY_DOUBLE));
   double* data_ptr_res_data = (reinterpret_cast<double*>(res->data));
-
   for (int i = 0; i < pred.rows(); i++) {
     data_ptr_res_data[i] = pred(i);
   }

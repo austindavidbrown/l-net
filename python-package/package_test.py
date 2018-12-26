@@ -55,16 +55,16 @@ lambda_ = 1;
 fit = lnet.Fit(X = X_train, y = y_train, alpha = alpha, lambda_ = lambda_)
 print("\nCoefficient: ", fit.coeff())
 
-print("\nTest MSE:", ((y_test - fit.predict(X = X_test))**2).mean())
+print("\nFit MSE:", ((y_test - fit.predict(X = X_test))**2).mean())
 
 ###
 # CV test
 ###
 cv = lnet.CV(X = X_train, y = y_train, alpha = alpha, lambdas = np.array([.1, .5, 1, 2, 3, 4]))
-print("\nCV Test, specified lambdas: MSE:", ((y_test - cv.predict(X = X_test))**2).mean())
+print("\nCV MSE, specified lambdas:", ((y_test - cv.predict(X = X_test))**2).mean())
 
 cv = lnet.CV(X = X_train, y = y_train, alpha = alpha)
-print("\nCV Test, default lambdas: MSE:", ((y_test - cv.predict(X = X_test))**2).mean())
+print("\nCV MSE, default lambdas:", ((y_test - cv.predict(X = X_test))**2).mean())
 
 
 ###
@@ -83,4 +83,8 @@ lambda_ = 1;
 fit = lnet.Fit(X = X_train, y = binary_y_train, alpha = alpha, lambda_ = lambda_, objective = "classification:binary")
 print("\nCoefficient: ", fit.coeff())
 
-print("\nAccuracy: ", 1/binary_y_test.shape[0] * np.sum(binary_y_test == np.round(fit.predict(X = X_test))).astype(int))
+print("\nFit Accuracy: ", 1/binary_y_test.shape[0] * np.sum(binary_y_test == np.round(fit.predict(X = X_test))).astype(int))
+
+cv = lnet.CV(X = X_train, y = y_train, alpha = alpha, lambdas = np.array([.1, .5, 1, 2, 3, 4]), objective = "classification:binary")
+print("\nCV Accuracy: ", 1/binary_y_test.shape[0] * np.sum(binary_y_test == np.round(cv.predict(X = X_test))).astype(int))
+
