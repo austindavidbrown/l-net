@@ -85,37 +85,46 @@ VectorXd predict_regression(const MatrixXd& X, const double intercept, const Vec
 FitType fit_regression_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
                               const Matrix<double, 6, 1>& alpha, const double lambda,
                               const int max_iter, const double tolerance) {
-  VectorXd B = B_0; // create return value
+  FitType fit;
+
   const int n = X.rows();
   const int p = X.cols();
+  const VectorXd One_n = VectorXd::Ones(n);
 
-  // Center: Convert X, y to mean 0
-  MatrixXd cX = MatrixXd(n, p);
-  for (int j = 0; j < X.cols(); j++) {
-    cX.col(j) = X.col(j) - (X.col(j).mean() * VectorXd::Ones(n));
-  }
-  const VectorXd cy = y - (y.mean() * VectorXd::Ones(n));
-
+  // Create the values to optimize
+  double intercept = 0;
+  VectorXd B = B_0;
   for (int j = 0; j < max_iter; j++) {
     // Keep track of current B and intercept
+    const double intercept_old = intercept;
     const VectorXd B_old = B;
-    const double intercept_old = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B_old));
 
+    //
     // Compute derivative of f
-    VectorXd Df = VectorXd::Zero(p); // Derivative of loss + differentiable penalizations
-    const VectorXd cache_d = cy - (cX * B_old); // compute only once for speed
+    //
+    const VectorXd cache_d = y - intercept_old * One_n - X * B_old; // compute only once for speed
+
+    // Compute the derivative of intercept with no penalization
+    double Df_intercept = -1 * One_n.transpose() * cache_d;
+
+    // Compute derivative of the rest: Derivative of loss + differentiable penalizations
+    VectorXd Df = VectorXd::Zero(p);
     for (int i = 0; i < p; i++) {
-      Df(i) = -1 * cX.col(i).transpose() * cache_d
+      Df(i) = -1 * X.col(i).transpose() * cache_d
                 + alpha(1) * lambda * B_old(i) + alpha(2) * lambda * pow(B_old(i), 3) 
                 + alpha(3) * lambda * pow(B_old(i), 5) + alpha(4) * lambda * pow(B_old(i), 7) + alpha(5) * lambda * pow(B_old(i), 9);
     }
 
     // Line search
-    double h_j = .5; // initial step size
+    double h_j = 0.5; // initial step size
     bool line_searching = true;
     while (line_searching) {
+      // Gradient step for the intercept
+      intercept = intercept_old - h_j * Df_intercept;
+
+      // Gradient step for the rest
       for (int i = 0; i < p; i++) {
-        // Proximal Mapping of g: Soft Thresholding
+        // Proximal Mapping of l1: Soft Thresholding
         const double v_i = B_old(i) - h_j * Df(i); // gradient step
         if (v_i < -h_j * alpha(0) * lambda) {
           B(i) = v_i + h_j * alpha(0) * lambda;
@@ -127,29 +136,30 @@ FitType fit_regression_proximal_gradient(const VectorXd& B_0, const MatrixXd& X,
       }
 
       // Line search criterion from Boyd: Proximal algorithms
-      const double intercept = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
-      if ( (y - intercept * VectorXd::Ones(n) - (X * B)).squaredNorm() <= (y - intercept_old * VectorXd::Ones(n) - (X * B_old)).squaredNorm() + Df.transpose() * (B - B_old) + 1.0/((double)2.0 * h_j) * (B - B_old).squaredNorm() ) {
-        line_searching = false; // break
+      const double f_B = (y - intercept * One_n - (X * B)).squaredNorm();
+      const double f_B_old = cache_d.squaredNorm();
+      if ( f_B <= f_B_old + Df_intercept * (intercept - intercept_old) + Df.transpose() * (B - B_old) + 1.0/((double)2.0 * h_j) * (pow(intercept - intercept_old, 2) + (B - B_old).squaredNorm()) ) {
+        // If we are descenting, break out of line search
+        line_searching = false;
+      } else if (h_j == 0){
+        // We cannot descent, so we have converged and break out of line search
+        line_searching = false;
       } else {
-        h_j = .5 * h_j; // half step size
+        h_j = 0.5 * h_j; // half step size
       } 
     }
 
     // Stop if the norm of the Moreau-Yoshida convolution gradient is less than tolerance
     if ( ((B - B_old)).squaredNorm() < tolerance ) {
-      const double intercept = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
       // Build return value
-      FitType fit;
       fit.intercept = intercept;
       fit.B = B;
       return fit;
     }
   }
 
-  std::cout << "Failed to converge!\n";
-  const double intercept = 1.0/((double)n) *  VectorXd::Ones(n).transpose() * (y.mean() * VectorXd::Ones(n) - (X * B));
+  cout << "Failed to converge!\n";
   // Build return value
-  FitType fit;
   fit.intercept = intercept;
   fit.B = B;
   return fit;

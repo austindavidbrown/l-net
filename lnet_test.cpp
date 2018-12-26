@@ -144,7 +144,7 @@ void test_cross_validation_regression_proximal_gradient(MatrixXd& X_train, Vecto
   CVType cv = cross_validation_regression_proximal_gradient(X_train, y_train, K_fold, alpha, lambdas, max_iter, tolerance, random_seed);
   cout << "\nCV Risks:\n" << cv.risks << "\n";
 
-  cout << "\nOrdered Lambdas\n";
+  cout << "\nCV Lambdas\n";
   for (auto& lambda : cv.lambdas) {
     cout << lambda << " ";
   }
@@ -214,7 +214,7 @@ void test_cross_validation_regression_proximal_gradient_cd(MatrixXd& X_train, Ve
   CVType cv = cross_validation_regression_proximal_gradient_cd(X_train, y_train, K_fold, alpha, lambdas, step_size, max_iter, tolerance, random_seed);
   cout << "\nCV Risks:\n" << cv.risks << "\n";
 
-  cout << "\nOrdered Lambdas\n";
+  cout << "\nCV Lambdas\n";
   for (auto& lambda : cv.lambdas) {
     cout << lambda << " ";
   }
@@ -510,7 +510,7 @@ int main() {
   // bench();
 
   test_regression();
-  test_logistic_regression();
+  // test_logistic_regression();
 
   //test_regression_prostate();
 }
