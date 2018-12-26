@@ -19,7 +19,7 @@ using std::sort;
 using std::cout;
 
 // TODO look into stopping criterion
-// TODO add normalize matrix and remove the centering logic in the optimization
+// TODO remove the centering logic in the optimization
 
 struct FitType {
   double intercept;
@@ -68,7 +68,7 @@ vector<vector<T>> partition(const vector<T>& S, const size_t n) {
 /*
 ================================
 
-Lnet Regression
+Lnet Proximal Gradient Regression
 
 ================================
 */
@@ -81,12 +81,6 @@ VectorXd predict_regression(const MatrixXd& X, const double intercept, const Vec
   const int n = X.rows();
   return intercept * VectorXd::Ones(n) + (X * B);
 }
-
-/*
-
-Proximal Gradient Descent Regression
-
-*/
 
 FitType fit_regression_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
                               const Matrix<double, 6, 1>& alpha, const double lambda,
@@ -252,6 +246,261 @@ CVType cross_validation_regression_proximal_gradient(const MatrixXd& X, const Ve
   return cv;
 }
 
+/*
+================================
+
+Lnet Proximal Gradient Classification
+
+================================
+*/
+
+// Notes: We purposefully use doubles instead of integers everywhere to avoid any conversion.
+
+double sigmoid(const double x) {
+  return pow(1 + exp(-1 * x), -1);
+}
+
+// We purposefully use doubles
+double accuracy(const VectorXd& v, const VectorXd& w) {
+  if (v.rows() != w.rows()) {
+    throw std::invalid_argument("Vectors must be the same length.");
+  }
+  const int n = v.rows();
+  double m = 0;
+  for (int i = 0; i < n; i++) {
+    m += (v(i) == w(i));
+  }
+  return 1.0/((double)n) * m;
+}
+
+VectorXd predict_class(const MatrixXd& X, const double intercept, const VectorXd& B) {
+  const int n = X.rows();
+  VectorXd pred = VectorXd::Zero(n);
+
+  for (int i = 0; i < n; i++) {
+     double p = sigmoid(intercept + X.row(i) * B);
+    if (p > 1 - p) {
+      pred(i) = 1.0;
+    } else {
+      pred(i) = 0.0;
+    }
+  }
+  return pred;
+}
+
+VectorXd predict_prob(const MatrixXd& X, const double intercept, const VectorXd& B) {
+  const int n = X.rows();
+  VectorXd pred_prob = VectorXd::Zero(n);
+  for (int i = 0; i < n; i++) {
+    pred_prob(i) = sigmoid(intercept + X.row(i) * B);
+  }
+  return pred_prob;
+}
+
+
+FitType fit_logistic_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
+                              const Matrix<double, 6, 1>& alpha, const double lambda,
+                              const int max_iter, const double tolerance) {
+  FitType fit; // return value
+
+  const int n = X.rows();
+  const int p = X.cols();
+
+  // Create return values
+  VectorXd B = B_0;
+  double intercept = 0;
+  for (int j = 0; j < max_iter; j++) {
+    // Keep track of the current values
+    const VectorXd B_old = B;
+    const double intercept_old = intercept;
+
+    // Compute once and store
+    VectorXd sigmoid_intercept_XB = VectorXd::Zero(n);
+    for (int i = 0; i < n; i++) {
+      sigmoid_intercept_XB(i) = sigmoid(intercept + X.row(i) * B_old);
+    }
+
+    /*
+    Compute the derivative of f
+    */
+    double Df_intercept = VectorXd::Ones(n).transpose() * (y - sigmoid_intercept_XB);
+    VectorXd Df = VectorXd::Zero(p); // Derivative of loss + differentiable penalizations
+    for (int i = 0; i < p; i++) {
+      Df(i) = X.col(i).transpose() * (y - sigmoid_intercept_XB);
+    }
+
+    bool line_searching = true;
+    double h_j = .5; // initial step size
+    while (line_searching) {
+      // Update intercept
+      intercept = intercept_old + h_j * Df_intercept;
+
+      // Update the rest with penalization
+      for (int i = 0; i < p; i++) {
+        // Proximal Mapping: Soft Thresholding
+        const double v_i = B_old(i) + h_j * Df(i); // gradient step
+        if (v_i < -h_j * alpha(0) * lambda) {
+          B(i) = v_i + h_j * alpha(0) * lambda;
+        } else if (v_i >= -h_j * alpha(0) * lambda && v_i <= h_j * alpha(0) * lambda) {
+          B(i) = 0;
+        } else if (v_i > h_j * alpha(0) * lambda) {
+          B(i) = v_i - h_j * alpha(0) * lambda;
+        }
+      }
+
+      // Check if the the step size is small enough for descent
+      double f_B_old = 0;
+      double f_B = 0;
+      for (int i = 0; i < n; i++) {
+        f_B_old += y(i) * log(sigmoid(intercept + X.row(i) * B_old)) + (1 - y(i)) * log(1 - sigmoid(intercept + X.row(i) * B_old));
+        f_B += y(i) * log(sigmoid(intercept + X.row(i) * B)) + (1 - y(i)) * log(1 - sigmoid(intercept + X.row(i) * B));
+      }
+      if ( -f_B <= -f_B_old - Df_intercept * (intercept - intercept_old) - Df.transpose() * (B - B_old) + 1.0/((double)2.0 * h_j) * ( pow(intercept - intercept_old, 2) + (B - B_old).squaredNorm() ) ) {
+        line_searching = false; // break
+      } else {
+        h_j = .5 * h_j; // half step size
+      }
+    }
+
+    // Stopping criterion
+    if ( pow(intercept - intercept_old, 2) + (B - B_old).squaredNorm() < tolerance ) {
+      // Build return value
+      fit.intercept = intercept;
+      fit.B = B;
+      return fit;
+    }
+  }
+
+  std::cout << "Failed to converge! Tune the step size.\n";
+  // Build return
+  fit.intercept = intercept;
+  fit.B = B;
+  return fit;
+}
+
+// Returns a vector of B corresponding to lambdas using warm-start.
+// We do not sort the lambdas here, they are ordered how you want them
+vector<FitType> fit_logistic_warm_start_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
+                                         const Matrix<double, 6, 1>& alpha, const vector<double>& lambdas,
+                                         const int max_iter, const double tolerance) {
+  const int p = X.cols();
+  const int L = lambdas.size();
+  vector<FitType> fit_vector;
+
+  // do the first one normally
+  VectorXd B_0 = VectorXd::Zero(p);
+  fit_vector.push_back(fit_logistic_proximal_gradient(B_0, X, y, alpha, lambdas[0], max_iter, tolerance));
+
+  // Warm start after the first one
+  for (int l = 1; l < L; l++) {
+    const FitType fit_warm = fit_vector.at(l - 1); // warm start
+    const VectorXd B_warm = fit_warm.B;
+    fit_vector.push_back(fit_logistic_proximal_gradient(B_warm, X, y, alpha, lambdas[l], max_iter, tolerance));
+  }
+  return fit_vector;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+================================
+
+Lnet Classification Coordinate Descent
+
+Not used.
+================================
+*/
+
+/*
+Logistic proximal gradient coordinate descent
+*/
+FitType fit_logistic_proximal_gradient_coordinate_descent(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
+                              const Matrix<double, 6, 1>& alpha, const double lambda, const double step_size,
+                              const int max_iter, const double tolerance) {
+  FitType fit; // return value
+
+  const int n = X.rows();
+  const int p = X.cols();
+
+  // Create return values
+  VectorXd B = B_0;
+  double intercept = 0;
+  for (int j = 0; j < max_iter; j++) {
+    // Keep track of the current values
+    const VectorXd B_old = B;
+    const double intercept_old = intercept;
+
+    const double h_j = step_size; // step size
+
+    // Update intercept without penalization
+    VectorXd Isigmoid_intercept_XB = VectorXd::Zero(n);
+    for (int l = 0; l < n; l++) {
+      Isigmoid_intercept_XB(l) = sigmoid(intercept + X.row(l) * B);
+    }
+    intercept = intercept + h_j * VectorXd::Ones(n).transpose() * (y - Isigmoid_intercept_XB);
+
+    // Update the rest with penalization
+    for (int i = 0; i < p; i++) {
+      //
+      // derivative of loss + differentiable penalizations
+      //
+      VectorXd sigmoid_intercept_XB = VectorXd::Zero(n);
+      for (int k = 0; k < n; k++) {
+        sigmoid_intercept_XB(k) = sigmoid(intercept + X.row(k) * B);
+      }
+      const double DL_i = X.col(i).transpose() * (y - sigmoid_intercept_XB);
+
+      // Proximal Mapping: Soft Thresholding
+      const double v_i = B(i) + h_j * DL_i; // gradient step
+      if (v_i < -h_j * alpha(0) * lambda) {
+        B(i) = v_i + h_j * alpha(0) * lambda;
+      } else if (v_i >= -h_j * alpha(0) * lambda && v_i <= h_j * alpha(0) * lambda) {
+        B(i) = 0;
+      } else if (v_i > h_j * alpha(0) * lambda) {
+        B(i) = v_i - h_j * alpha(0) * lambda;
+      }
+    }
+
+    // Stopping criterion
+    if ( pow(intercept - intercept_old, 2) + (B - B_old).squaredNorm() < tolerance ) {
+      // Build return value
+      fit.intercept = intercept;
+      fit.B = B;
+      return fit;
+    }
+  }
+
+  std::cout << "Failed to converge! Tune the step size.\n";
+  // Build return
+  fit.intercept = intercept;
+  fit.B = B;
+  return fit;
+}
+
+
+
+
+
+/*
+================================
+
+Lnet Regression Coordinate Descent
+
+Not used.
+
+================================
+*/
+
 
 /*
 
@@ -411,230 +660,3 @@ CVType cross_validation_regression_proximal_gradient_cd(const MatrixXd& X, const
   cv.lambdas = lambdas;
   return cv;
 }
-
-
-
-/*
-================================
-
-Lnet Classification
-
-================================
-*/
-
-// Notes: We purposefully use doubles instead of integers everywhere to avoid any conversion.
-
-double sigmoid(const double x) {
-  return pow(1 + exp(-1 * x), -1);
-}
-
-// We purposefully use doubles
-double accuracy(const VectorXd& v, const VectorXd& w) {
-  if (v.rows() != w.rows()) {
-    throw std::invalid_argument("Vectors must be the same length.");
-  }
-  const int n = v.rows();
-  double m = 0;
-  for (int i = 0; i < n; i++) {
-    m += (v(i) == w(i));
-  }
-  return 1.0/((double)n) * m;
-}
-
-VectorXd predict_class(const MatrixXd& X, const double intercept, const VectorXd& B) {
-  const int n = X.rows();
-  VectorXd pred = VectorXd::Zero(n);
-
-  for (int i = 0; i < n; i++) {
-     double p = sigmoid(intercept + X.row(i) * B);
-    if (p > 1 - p) {
-      pred(i) = 1.0;
-    } else {
-      pred(i) = 0.0;
-    }
-  }
-  return pred;
-}
-
-VectorXd predict_prob(const MatrixXd& X, const double intercept, const VectorXd& B) {
-  const int n = X.rows();
-  VectorXd pred_prob = VectorXd::Zero(n);
-  for (int i = 0; i < n; i++) {
-    pred_prob(i) = sigmoid(intercept + X.row(i) * B);
-  }
-  return pred_prob;
-}
-
-/*
-Logistic proximal gradient coordinate descent
-
-Here just for reference
-*/
-FitType fit_logistic_proximal_gradient_coordinate_descent(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
-                              const Matrix<double, 6, 1>& alpha, const double lambda, const double step_size,
-                              const int max_iter, const double tolerance) {
-  FitType fit; // return value
-
-  const int n = X.rows();
-  const int p = X.cols();
-
-  // Create return values
-  VectorXd B = B_0;
-  double intercept = 0;
-  for (int j = 0; j < max_iter; j++) {
-    // Keep track of the current values
-    const VectorXd B_old = B;
-    const double intercept_old = intercept;
-
-    const double h_j = step_size; // step size
-
-    // Update intercept without penalization
-    VectorXd Isigmoid_intercept_XB = VectorXd::Zero(n);
-    for (int l = 0; l < n; l++) {
-      Isigmoid_intercept_XB(l) = sigmoid(intercept + X.row(l) * B);
-    }
-    intercept = intercept + h_j * VectorXd::Ones(n).transpose() * (y - Isigmoid_intercept_XB);
-
-    // Update the rest with penalization
-    for (int i = 0; i < p; i++) {
-      //
-      // derivative of loss + differentiable penalizations
-      //
-      VectorXd sigmoid_intercept_XB = VectorXd::Zero(n);
-      for (int k = 0; k < n; k++) {
-        sigmoid_intercept_XB(k) = sigmoid(intercept + X.row(k) * B);
-      }
-      const double DL_i = X.col(i).transpose() * (y - sigmoid_intercept_XB);
-
-      // Proximal Mapping: Soft Thresholding
-      const double v_i = B(i) + h_j * DL_i; // gradient step
-      if (v_i < -h_j * alpha(0) * lambda) {
-        B(i) = v_i + h_j * alpha(0) * lambda;
-      } else if (v_i >= -h_j * alpha(0) * lambda && v_i <= h_j * alpha(0) * lambda) {
-        B(i) = 0;
-      } else if (v_i > h_j * alpha(0) * lambda) {
-        B(i) = v_i - h_j * alpha(0) * lambda;
-      }
-    }
-
-    // Stopping criterion
-    if ( pow(intercept - intercept_old, 2) + (B - B_old).squaredNorm() < tolerance ) {
-      // Build return value
-      fit.intercept = intercept;
-      fit.B = B;
-      return fit;
-    }
-  }
-
-  std::cout << "Failed to converge! Tune the step size.\n";
-  // Build return
-  fit.intercept = intercept;
-  fit.B = B;
-  return fit;
-}
-
-
-FitType fit_logistic_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
-                              const Matrix<double, 6, 1>& alpha, const double lambda,
-                              const int max_iter, const double tolerance) {
-  FitType fit; // return value
-
-  const int n = X.rows();
-  const int p = X.cols();
-
-  // Create return values
-  VectorXd B = B_0;
-  double intercept = 0;
-  for (int j = 0; j < max_iter; j++) {
-    // Keep track of the current values
-    const VectorXd B_old = B;
-    const double intercept_old = intercept;
-
-    // Compute once and store
-    VectorXd sigmoid_intercept_XB = VectorXd::Zero(n);
-    for (int i = 0; i < n; i++) {
-      sigmoid_intercept_XB(i) = sigmoid(intercept + X.row(i) * B_old);
-    }
-
-    /*
-    Compute the derivative of f
-    */
-    double Df_intercept = VectorXd::Ones(n).transpose() * (y - sigmoid_intercept_XB);
-    VectorXd Df = VectorXd::Zero(p); // Derivative of loss + differentiable penalizations
-    for (int i = 0; i < p; i++) {
-      Df(i) = X.col(i).transpose() * (y - sigmoid_intercept_XB);
-    }
-
-    bool line_searching = true;
-    double h_j = .5; // initial step size
-    while (line_searching) {
-      // Update intercept
-      intercept = intercept_old + h_j * Df_intercept;
-
-      // Update the rest with penalization
-      for (int i = 0; i < p; i++) {
-        // Proximal Mapping: Soft Thresholding
-        const double v_i = B_old(i) + h_j * Df(i); // gradient step
-        if (v_i < -h_j * alpha(0) * lambda) {
-          B(i) = v_i + h_j * alpha(0) * lambda;
-        } else if (v_i >= -h_j * alpha(0) * lambda && v_i <= h_j * alpha(0) * lambda) {
-          B(i) = 0;
-        } else if (v_i > h_j * alpha(0) * lambda) {
-          B(i) = v_i - h_j * alpha(0) * lambda;
-        }
-      }
-
-      // Check if the the step size is small enough for descent
-      double f_B_old = 0;
-      double f_B = 0;
-      for (int i = 0; i < n; i++) {
-        f_B_old += y(i) * log(sigmoid(intercept + X.row(i) * B_old)) + (1 - y(i)) * log(1 - sigmoid(intercept + X.row(i) * B_old));
-        f_B += y(i) * log(sigmoid(intercept + X.row(i) * B)) + (1 - y(i)) * log(1 - sigmoid(intercept + X.row(i) * B));
-      }
-      if ( -f_B <= -f_B_old - Df_intercept * (intercept - intercept_old) - Df.transpose() * (B - B_old) + 1.0/((double)2.0 * h_j) * ( pow(intercept - intercept_old, 2) + (B - B_old).squaredNorm() ) ) {
-        line_searching = false; // break
-      } else {
-        h_j = .5 * h_j; // half step size
-      }
-    }
-
-    // Stopping criterion
-    if ( pow(intercept - intercept_old, 2) + (B - B_old).squaredNorm() < tolerance ) {
-      // Build return value
-      fit.intercept = intercept;
-      fit.B = B;
-      return fit;
-    }
-  }
-
-  std::cout << "Failed to converge! Tune the step size.\n";
-  // Build return
-  fit.intercept = intercept;
-  fit.B = B;
-  return fit;
-}
-
-// Returns a vector of B corresponding to lambdas using warm-start.
-// We do not sort the lambdas here, they are ordered how you want them
-vector<FitType> fit_logistic_warm_start_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
-                                         const Matrix<double, 6, 1>& alpha, const vector<double>& lambdas,
-                                         const int max_iter, const double tolerance) {
-  const int p = X.cols();
-  const int L = lambdas.size();
-  vector<FitType> fit_vector;
-
-  // do the first one normally
-  VectorXd B_0 = VectorXd::Zero(p);
-  fit_vector.push_back(fit_logistic_proximal_gradient(B_0, X, y, alpha, lambdas[0], max_iter, tolerance));
-
-  // Warm start after the first one
-  for (int l = 1; l < L; l++) {
-    const FitType fit_warm = fit_vector.at(l - 1); // warm start
-    const VectorXd B_warm = fit_warm.B;
-    fit_vector.push_back(fit_logistic_proximal_gradient(B_warm, X, y, alpha, lambdas[l], max_iter, tolerance));
-  }
-  return fit_vector;
-}
-
-
-

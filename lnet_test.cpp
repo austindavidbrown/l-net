@@ -488,7 +488,7 @@ int main() {
   // test_random_gen();
   // bench();
 
-  //test_regression();
+  test_regression();
   //test_regression_prostate();
 
   test_logistic_regression();
