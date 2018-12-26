@@ -4,8 +4,6 @@ Reference:
   PySys_WriteStdout(std::to_string(self->max_iter).c_str());
 */
 
-// TODO add classification to CV
-// TODO add classification to Fit
 // TODO: Change self->X and the X in CV it is confusing
 // TODO: fix CV to where it doesn't fit on predict
 
@@ -30,7 +28,244 @@ using std::cout;
 /*
 ===================================
 
-LnetCV python Fit class
+Lnet python Fit class
+
+===================================
+*/
+typedef struct {
+  PyObject_HEAD
+
+  VectorXd B;
+  double intercept;
+  bool binary_classification;
+} LnetFitObject;
+
+static PyObject* LnetFit_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+    LnetFitObject *self;
+    self = (LnetFitObject *) type->tp_alloc(type, 0);
+    if (self != NULL) {
+      // initialization goes here
+    }
+    return (PyObject *) self;
+}
+
+static void LnetFit_dealloc(LnetFitObject *self) {
+  Py_TYPE(self)->tp_free((PyObject *) self);
+}
+
+static int LnetFit_fit(LnetFitObject *self, PyObject *args, PyObject *kwargs) {
+  const char* keywords[] = {"X", "y", "alpha", "lambda_", 
+                            "objective", "max_iter", "tolerance", "random_seed", NULL};
+
+  // Required arguments
+  PyArrayObject* arg_y = NULL;
+  PyArrayObject* arg_X = NULL;
+  PyArrayObject* arg_alpha = NULL;
+  double arg_lambda;
+
+  // Optional arguments
+  char* arg_objective = (char *)"regression";
+  int arg_max_iter = 10000;
+  double arg_tolerance = pow(10, -6);
+  int arg_random_seed = 0;
+
+  // Parse arguments
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!d|sidi", (char**) keywords,
+                        &PyArray_Type, &arg_X, &PyArray_Type, &arg_y, 
+                        &PyArray_Type, &arg_alpha, &arg_lambda, 
+                        &arg_objective, &arg_max_iter, &arg_tolerance, &arg_random_seed)) {
+    return -1;
+  }
+
+  // Handle X argument
+  arg_X = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_X), NPY_DOUBLE, NPY_IN_ARRAY));
+  double* data_ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
+  const int nrow_X = (arg_X->dimensions)[0];
+  const int ncol_X = (arg_X->dimensions)[1];
+
+  // Handle y argument
+  arg_y = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_y), NPY_DOUBLE, NPY_IN_ARRAY));
+  double* data_ptr_arg_y = reinterpret_cast<double*>(arg_y->data);
+  const int nrow_y = (arg_y->dimensions)[0];
+
+  // Handle alpha argument
+  arg_alpha = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_alpha), NPY_DOUBLE, NPY_IN_ARRAY));
+  double* data_ptr_arg_alpha = reinterpret_cast<double*>(arg_alpha->data);
+
+  // Handle objective
+  if (strcmp("classification:binary", arg_objective) == 0) {
+    self->binary_classification = true;
+  } else if (strcmp("regression", arg_objective) == 0) {
+    self->binary_classification = false;
+  } else {
+    PyErr_SetString(PyExc_ValueError, "Bad objective.");
+    return -1;
+  }
+
+  // Setup
+  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
+  const Map<VectorXd> y(data_ptr_arg_y, nrow_y);
+  const Map<Matrix<double, 6, 1>> alpha(data_ptr_arg_alpha);
+
+
+  FitType fit;
+  const VectorXd B_0 = VectorXd::Zero(X.cols());
+  if (self->binary_classification) {
+    // Fit binary classification
+    fit = fit_logistic_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
+  } else {
+    // Fit regression
+    fit = fit_regression_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
+  }
+
+  // Assign to the class
+  self->B = fit.B;
+  self->intercept = fit.intercept;
+
+  return 0;
+}
+
+static PyObject* LnetFit_coeff(LnetFitObject *self, PyObject *Py_UNUSED(ignored)) { 
+  //
+  // Copy to Python
+  //
+  long B_res_dims[1];
+  B_res_dims[0] = self->B.rows();
+  PyArrayObject* B_res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, B_res_dims, NPY_DOUBLE)); // 1 is for vector
+  double* data_ptr_B_res = (reinterpret_cast<double*>(B_res->data));
+
+  for (int i = 0; i < self->B.rows(); i++) {
+    data_ptr_B_res[i] = self->B(i);
+  }
+
+  // Return dictionary
+  return Py_BuildValue("{s:d, s:O}",
+                "intercept", self->intercept, 
+                "B", B_res);
+}
+
+static PyObject* LnetFit_predict(LnetFitObject *self, PyObject *args, PyObject* kwargs) {
+  const char* keywords[] = {"X", NULL};
+
+  // Required arguments
+  PyArrayObject* arg_X = NULL;
+
+  // Parse arguments
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", (char**) keywords, 
+                                   &PyArray_Type, &arg_X)) {
+    return NULL;
+  }
+
+  // Handle X argument
+  arg_X = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_X), NPY_DOUBLE, NPY_IN_ARRAY));
+  double* data_ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
+  const int nrow_X = (arg_X->dimensions)[0];
+  const int ncol_X = (arg_X->dimensions)[1];
+
+  // Setup
+  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
+
+  VectorXd pred;
+  if (self->binary_classification) {
+    // Predict classification
+    pred = predict_prob(X, self->intercept, self->B);
+  } else {
+    // Predict regression
+    pred = predict_regression(X, self->intercept, self->B);
+  }
+
+  long res_dims[1];
+  res_dims[0] = pred.rows();
+  PyArrayObject* res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_dims, NPY_DOUBLE));
+  double* data_ptr_res_data = (reinterpret_cast<double*>(res->data));
+  for (int i = 0; i < pred.rows(); i++) {
+    data_ptr_res_data[i] = pred(i);
+  }
+
+  return Py_BuildValue("O", res);
+}
+
+/*
+
+Lnet fit python class definition
+
+*/
+
+// Documentation
+static const char* DOC_LnetFit_init = R"(
+Lnet
+ 
+The \code{Fit} class is used to fit a single regression model with a specified penalization. 
+
+@param X is an \eqn{n \times m}-dimensional matrix of the data.
+@param y is an \eqn{n \times m}-dimensional matrix of the data.
+@param alpha is a \eqn{6}-dimensional vector of the convex combination corresponding to the penalization:
+\itemize{
+\item \eqn{\alpha_1} is the \eqn{l^1} penalty.
+  \item \eqn{\alpha_2} is the \eqn{l^2} penalty.
+  \item \eqn{\alpha_3} is the \eqn{l^4} penalty.
+  \item \eqn{\alpha_4} is the \eqn{l^6} penalty.
+  \item \eqn{\alpha_5} is the \eqn{l^8} penalty.
+  \item \eqn{\alpha_6} is the \eqn{l^{10}} penalty.
+}
+@param lambda is the Lagrangian dual penalization parameter.
+@param max_iter is the maximum iterations the algorithm will run regardless of convergence.
+@param tolerance is the accuracy of the stopping criterion.
+ 
+@return 
+A class \code{Fit}
+
+@references
+Zou, Hui. “Regularization and variable selection via the elastic net.” (2004).
+)";
+
+static const char* DOC_LnetFit_predict = R"(
+Lnet Prediction
+
+The prediction function for \code{pros}.
+ 
+@param object an object of class \code{pros}
+@param X is an \eqn{n \times m}-dimensional matrix of the data.
+@param ... Other parameters (this is required by R)
+ 
+@return A \code{vector} of prediction values.
+)";
+
+static const char* DOC_LnetFit_coeff = R"(
+Lnet coeff
+
+Returns the coefficients.
+)";
+
+static PyMemberDef LnetFit_members[] = {
+  {NULL}  /* Sentinel */
+};
+
+static PyMethodDef LnetFit_methods[] = {
+  {"coeff", reinterpret_cast<PyCFunction>(LnetFit_coeff), METH_NOARGS, DOC_LnetFit_coeff},
+  {"predict", reinterpret_cast<PyCFunction>(LnetFit_predict), METH_VARARGS|METH_KEYWORDS, DOC_LnetFit_predict},
+  {NULL}  /* Sentinel */
+};
+
+static PyTypeObject LnetFitType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "lnet.Fit",
+    .tp_doc = DOC_LnetFit_init,
+    .tp_basicsize = sizeof(LnetFitObject),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_new = LnetFit_new,
+    .tp_init = (initproc) LnetFit_fit,
+    .tp_dealloc = (destructor) LnetFit_dealloc,
+    .tp_members = LnetFit_members,
+    .tp_methods = LnetFit_methods,
+};
+
+
+/*
+===================================
+
+LnetCV python class
 
 ===================================
 */
@@ -83,10 +318,10 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   char* arg_objective = (char *)"regression";
 
   // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!|O!siidi", (char**) keywords,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!|O!isidi", (char**) keywords,
                         &PyArray_Type, &arg_X, &PyArray_Type, &arg_y, &PyArray_Type, &arg_alpha, 
-                        &PyArray_Type, &arg_lambdas, &arg_objective,
-                        &(self->K_fold), &(self->max_iter), &(self->tolerance), &(self->random_seed))) {
+                        &PyArray_Type, &arg_lambdas,
+                        &(self->K_fold), &arg_objective, &(self->max_iter), &(self->tolerance), &(self->random_seed))) {
     return -1;
   }
 
@@ -142,11 +377,9 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   self->y = y;
   self->alpha = alpha;
 
-  // TODO
   CVType cv;
   if (self->binary_classification) {
-    PySys_WriteStdout("classification hit");
-    cv = cross_validation_regression_proximal_gradient(self->X, self->y, self->K_fold, self->alpha, lambdas, self->max_iter, self->tolerance, self->random_seed);
+    cv = cross_validation_logistic_proximal_gradient(self->X, self->y, self->K_fold, self->alpha, lambdas, self->max_iter, self->tolerance, self->random_seed);
   } else {
     cv = cross_validation_regression_proximal_gradient(self->X, self->y, self->K_fold, self->alpha, lambdas, self->max_iter, self->tolerance, self->random_seed);
   }
@@ -218,11 +451,9 @@ static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObj
   const VectorXd B_0 = VectorXd::Zero(self->X.cols());
   const FitType fit = fit_regression_proximal_gradient(B_0, self->X, self->y, self->alpha, self->best_lambda, self->max_iter, self->tolerance);
 
-  // TODO
   VectorXd pred;
   if (self->binary_classification) {
-    PySys_WriteStdout("classification hit");
-    pred = predict_regression(X, fit.intercept, fit.B);
+    pred = predict_prob(X, fit.intercept, fit.B);
   } else {
     pred = predict_regression(X, fit.intercept, fit.B);
   }
@@ -315,258 +546,6 @@ static PyTypeObject LnetCVType = {
     .tp_members = LnetCV_members,
     .tp_methods = LnetCV_methods,
 };
-
-
-
-/*
-===================================
-
-Lnet python Fit class
-
-===================================
-*/
-typedef struct {
-  PyObject_HEAD
-
-  VectorXd B;
-  double intercept;
-  bool binary_classification;
-} LnetFitObject;
-
-static PyObject* LnetFit_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-    LnetFitObject *self;
-    self = (LnetFitObject *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-      // initialization goes here
-    }
-    return (PyObject *) self;
-}
-
-static void LnetFit_dealloc(LnetFitObject *self) {
-  Py_TYPE(self)->tp_free((PyObject *) self);
-}
-
-static int LnetFit_fit(LnetFitObject *self, PyObject *args, PyObject *kwargs) {
-  const char* keywords[] = {"X", "y", "alpha", "lambda_", 
-                            "objective", "max_iter", "tolerance", "random_seed", NULL};
-
-  // Required arguments
-  PyArrayObject* arg_y = NULL;
-  PyArrayObject* arg_X = NULL;
-  PyArrayObject* arg_alpha = NULL;
-  double arg_lambda;
-
-  // Optional arguments
-  char* arg_objective = (char *)"regression";
-  int arg_max_iter = 10000;
-  double arg_tolerance = pow(10, -6);
-  int arg_random_seed = 0;
-
-  // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!O!d|sidi", (char**) keywords,
-                        &PyArray_Type, &arg_X, &PyArray_Type, &arg_y, 
-                        &PyArray_Type, &arg_alpha, &arg_lambda, 
-                        &arg_objective, &arg_max_iter, &arg_tolerance, &arg_random_seed)) {
-    return -1;
-  }
-
-  // Handle X argument
-  arg_X = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_X), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* data_ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
-  const int nrow_X = (arg_X->dimensions)[0];
-  const int ncol_X = (arg_X->dimensions)[1];
-
-  // Handle y argument
-  arg_y = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_y), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* data_ptr_arg_y = reinterpret_cast<double*>(arg_y->data);
-  const int nrow_y = (arg_y->dimensions)[0];
-
-  // Handle alpha argument
-  arg_alpha = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_alpha), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* data_ptr_arg_alpha = reinterpret_cast<double*>(arg_alpha->data);
-
-  // Handle objective
-  if (strcmp("classification:binary", arg_objective) == 0) {
-    self->binary_classification = true;
-  } else if (strcmp("regression", arg_objective) == 0) {
-    self->binary_classification = false;
-  } else {
-    PyErr_SetString(PyExc_ValueError, "Bad objective.");
-    return -1;
-  }
-
-  // Setup
-  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
-  const Map<VectorXd> y(data_ptr_arg_y, nrow_y);
-  const Map<Matrix<double, 6, 1>> alpha(data_ptr_arg_alpha);
-
-
-  // TODO
-  if (self->binary_classification) {
-    PySys_WriteStdout("classification hit");
-
-    // Fit classification
-    const VectorXd B_0 = VectorXd::Zero(X.cols());
-    const FitType fit = fit_regression_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
-
-    // Assign to the class
-    self->B = fit.B;
-    self->intercept = fit.intercept;
-  } else {
-    // Fit regression
-    const VectorXd B_0 = VectorXd::Zero(X.cols());
-    const FitType fit = fit_regression_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
-
-    // Assign to the class
-    self->B = fit.B;
-    self->intercept = fit.intercept;
-  }
-
-  return 0;
-}
-
-static PyObject* LnetFit_coeff(LnetFitObject *self, PyObject *Py_UNUSED(ignored)) { 
-  //
-  // Copy to Python
-  //
-  long B_res_dims[1];
-  B_res_dims[0] = self->B.rows();
-  PyArrayObject* B_res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, B_res_dims, NPY_DOUBLE)); // 1 is for vector
-  double* data_ptr_B_res = (reinterpret_cast<double*>(B_res->data));
-
-  for (int i = 0; i < self->B.rows(); i++) {
-    data_ptr_B_res[i] = self->B(i);
-  }
-
-  // Return dictionary
-  return Py_BuildValue("{s:d, s:O}",
-                "intercept", self->intercept, 
-                "B", B_res);
-}
-
-static PyObject* LnetFit_predict(LnetFitObject *self, PyObject *args, PyObject* kwargs) {
-  const char* keywords[] = {"X", NULL};
-
-  // Required arguments
-  PyArrayObject* arg_X = NULL;
-
-  // Parse arguments
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", (char**) keywords, 
-                                   &PyArray_Type, &arg_X)) {
-    return NULL;
-  }
-
-  // Handle X argument
-  arg_X = reinterpret_cast<PyArrayObject*>(PyArray_FROM_OTF(reinterpret_cast<PyObject*>(arg_X), NPY_DOUBLE, NPY_IN_ARRAY));
-  double* data_ptr_arg_X = reinterpret_cast<double*>(arg_X->data);
-  const int nrow_X = (arg_X->dimensions)[0];
-  const int ncol_X = (arg_X->dimensions)[1];
-
-  // Setup
-  const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
-
-  VectorXd pred;
-  if (self->binary_classification) {
-    PySys_WriteStdout("classification hit");
-    // Predict classification
-    pred = predict_regression(X, self->intercept, self->B);
-  } else {
-    // Predict regression
-    pred = predict_regression(X, self->intercept, self->B);
-  }
-
-  //
-  // Copy to Python
-  //
-  long res_dims[1];
-  res_dims[0] = pred.rows();
-  PyArrayObject* res = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, res_dims, NPY_DOUBLE)); // 1 is for vector
-  double* data_ptr_res_data = (reinterpret_cast<double*>(res->data));
-
-  for (int i = 0; i < pred.rows(); i++) {
-    data_ptr_res_data[i] = pred(i);
-  }
-
-  return Py_BuildValue("O", res);
-}
-
-/*
-
-Lnet fit python class definition
-
-*/
-
-// Documentation
-static const char* DOC_LnetFit_init = R"(
-Lnet
- 
-The \code{Lnet} class is used to fit a single regression model with a specified penalization. 
-
-@param X is an \eqn{n \times m}-dimensional matrix of the data.
-@param y is an \eqn{n \times m}-dimensional matrix of the data.
-@param alpha is a \eqn{6}-dimensional vector of the convex combination corresponding to the penalization:
-\itemize{
-\item \eqn{\alpha_1} is the \eqn{l^1} penalty.
-  \item \eqn{\alpha_2} is the \eqn{l^2} penalty.
-  \item \eqn{\alpha_3} is the \eqn{l^4} penalty.
-  \item \eqn{\alpha_4} is the \eqn{l^6} penalty.
-  \item \eqn{\alpha_5} is the \eqn{l^8} penalty.
-  \item \eqn{\alpha_6} is the \eqn{l^{10}} penalty.
-}
-@param lambda is the Lagrangian dual penalization parameter.
-@param max_iter is the maximum iterations the algorithm will run regardless of convergence.
-@param tolerance is the accuracy of the stopping criterion.
-@param random_seed is the random seed used in the algorithms.
- 
-@return 
-A class \code{Lnet}
-
-@references
-Zou, Hui. “Regularization and variable selection via the elastic net.” (2004).
-)";
-
-static const char* DOC_LnetFit_predict = R"(
-Lnet Prediction
-
-The prediction function for \code{pros}.
- 
-@param object an object of class \code{pros}
-@param X is an \eqn{n \times m}-dimensional matrix of the data.
-@param ... Other parameters (this is required by R)
- 
-@return A \code{vector} of prediction values.
-)";
-
-static const char* DOC_LnetFit_coeff = R"(
-Lnet coeff
-
-Returns the coefficients.
-)";
-
-static PyMemberDef LnetFit_members[] = {
-  {NULL}  /* Sentinel */
-};
-
-static PyMethodDef LnetFit_methods[] = {
-  {"coeff", reinterpret_cast<PyCFunction>(LnetFit_coeff), METH_NOARGS, DOC_LnetFit_coeff},
-  {"predict", reinterpret_cast<PyCFunction>(LnetFit_predict), METH_VARARGS|METH_KEYWORDS, DOC_LnetFit_predict},
-  {NULL}  /* Sentinel */
-};
-
-static PyTypeObject LnetFitType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "lnet.Fit",
-    .tp_doc = DOC_LnetFit_init,
-    .tp_basicsize = sizeof(LnetFitObject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_new = LnetFit_new,
-    .tp_init = (initproc) LnetFit_fit,
-    .tp_dealloc = (destructor) LnetFit_dealloc,
-    .tp_members = LnetFit_members,
-    .tp_methods = LnetFit_methods,
-};
-
 
 /*
 
