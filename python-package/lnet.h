@@ -20,9 +20,6 @@ using std::vector;
 using std::sort;
 using std::cout;
 
-// TODO look into stopping criterion
-// TODO fix stopping on regression
-
 struct FitType {
   double intercept;
   VectorXd B;

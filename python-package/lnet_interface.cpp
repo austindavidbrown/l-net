@@ -142,14 +142,14 @@ static int python_LnetCV_cross_validation(LnetCVObject *self, PyObject *args, Py
   self->y = y;
   self->alpha = alpha;
 
-  // TODO classification
+  // TODO
+  CVType cv;
   if (self->binary_classification) {
     PySys_WriteStdout("classification hit");
+    cv = cross_validation_regression_proximal_gradient(self->X, self->y, self->K_fold, self->alpha, lambdas, self->max_iter, self->tolerance, self->random_seed);
   } else {
+    cv = cross_validation_regression_proximal_gradient(self->X, self->y, self->K_fold, self->alpha, lambdas, self->max_iter, self->tolerance, self->random_seed);
   }
-
-  // CV
-  CVType cv = cross_validation_proximal_gradient(self->X, self->y, self->K_fold, self->alpha, lambdas, self->max_iter, self->tolerance, self->random_seed);
 
   // Get location of best lambda
   MatrixXf::Index min_row;
@@ -186,7 +186,7 @@ static PyObject* python_LnetCV_data(LnetCVObject *self, PyObject *Py_UNUSED(igno
     data_ptr_res_lambdas[i] = self->cv_lambdas[i];
   }
 
-  // return dictionary
+  // Return dictionary
   return Py_BuildValue("{s:O, s:O, s:d}",
                 "risks", res_risks, 
                 "lambdas", res_lambdas,
@@ -216,15 +216,15 @@ static PyObject* python_LnetCV_predict(LnetCVObject *self, PyObject *args, PyObj
 
   // Fit
   const VectorXd B_0 = VectorXd::Zero(self->X.cols());
-  const FitType fit = fit_proximal_gradient(B_0, self->X, self->y, self->alpha, self->best_lambda, self->max_iter, self->tolerance);
+  const FitType fit = fit_regression_proximal_gradient(B_0, self->X, self->y, self->alpha, self->best_lambda, self->max_iter, self->tolerance);
 
   // TODO
   VectorXd pred;
   if (self->binary_classification) {
     PySys_WriteStdout("classification hit");
-    pred = predict(X, fit.intercept, fit.B);
+    pred = predict_regression(X, fit.intercept, fit.B);
   } else {
-    pred = predict(X, fit.intercept, fit.B);
+    pred = predict_regression(X, fit.intercept, fit.B);
   }
 
   //
@@ -405,9 +405,9 @@ static int LnetFit_fit(LnetFitObject *self, PyObject *args, PyObject *kwargs) {
   if (self->binary_classification) {
     PySys_WriteStdout("classification hit");
 
-    // Fit classification TODO
+    // Fit classification
     const VectorXd B_0 = VectorXd::Zero(X.cols());
-    const FitType fit = fit_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
+    const FitType fit = fit_regression_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
 
     // Assign to the class
     self->B = fit.B;
@@ -415,7 +415,7 @@ static int LnetFit_fit(LnetFitObject *self, PyObject *args, PyObject *kwargs) {
   } else {
     // Fit regression
     const VectorXd B_0 = VectorXd::Zero(X.cols());
-    const FitType fit = fit_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
+    const FitType fit = fit_regression_proximal_gradient(B_0, X, y, alpha, arg_lambda, arg_max_iter, arg_tolerance);
 
     // Assign to the class
     self->B = fit.B;
@@ -438,7 +438,7 @@ static PyObject* LnetFit_coeff(LnetFitObject *self, PyObject *Py_UNUSED(ignored)
     data_ptr_B_res[i] = self->B(i);
   }
 
-  // return dictionary
+  // Return dictionary
   return Py_BuildValue("{s:d, s:O}",
                 "intercept", self->intercept, 
                 "B", B_res);
@@ -465,15 +465,14 @@ static PyObject* LnetFit_predict(LnetFitObject *self, PyObject *args, PyObject* 
   // Setup
   const Map<Matrix<double, Dynamic, Dynamic, RowMajor>> X(data_ptr_arg_X, nrow_X, ncol_X);
 
-  // TODO
   VectorXd pred;
   if (self->binary_classification) {
     PySys_WriteStdout("classification hit");
     // Predict classification
-    pred = predict(X, self->intercept, self->B);
+    pred = predict_regression(X, self->intercept, self->B);
   } else {
     // Predict regression
-    pred = predict(X, self->intercept, self->B);
+    pred = predict_regression(X, self->intercept, self->B);
   }
 
   //
@@ -493,7 +492,7 @@ static PyObject* LnetFit_predict(LnetFitObject *self, PyObject *args, PyObject* 
 
 /*
 
-Lnet python class definition
+Lnet fit python class definition
 
 */
 
