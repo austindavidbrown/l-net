@@ -465,6 +465,11 @@ VectorXd predict_prob(const MatrixXd& X, const double intercept, const VectorXd&
   return pred_prob;
 }
 
+/*
+Logistic proximal gradient coordinate descent
+
+Here just for reference
+*/
 FitType fit_logistic_proximal_gradient_coordinate_descent(const VectorXd& B_0, const MatrixXd& X, const VectorXd& y, 
                               const Matrix<double, 6, 1>& alpha, const double lambda, const double step_size,
                               const int max_iter, const double tolerance) {
@@ -609,6 +614,27 @@ FitType fit_logistic_proximal_gradient(const VectorXd& B_0, const MatrixXd& X, c
   return fit;
 }
 
+// Returns a vector of B corresponding to lambdas using warm-start.
+// We do not sort the lambdas here, they are ordered how you want them
+vector<FitType> fit_logistic_warm_start_proximal_gradient(const MatrixXd& X, const VectorXd& y, 
+                                         const Matrix<double, 6, 1>& alpha, const vector<double>& lambdas,
+                                         const int max_iter, const double tolerance) {
+  const int p = X.cols();
+  const int L = lambdas.size();
+  vector<FitType> fit_vector;
+
+  // do the first one normally
+  VectorXd B_0 = VectorXd::Zero(p);
+  fit_vector.push_back(fit_logistic_proximal_gradient(B_0, X, y, alpha, lambdas[0], max_iter, tolerance));
+
+  // Warm start after the first one
+  for (int l = 1; l < L; l++) {
+    const FitType fit_warm = fit_vector.at(l - 1); // warm start
+    const VectorXd B_warm = fit_warm.B;
+    fit_vector.push_back(fit_logistic_proximal_gradient(B_warm, X, y, alpha, lambdas[l], max_iter, tolerance));
+  }
+  return fit_vector;
+}
 
 
 

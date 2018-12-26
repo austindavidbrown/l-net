@@ -329,15 +329,14 @@ void test_regression_prostate() {
   //
   // warm start test
   //
-  // Create lambdas
+  // create lambdas
   vector<double> lambdas;
-  lambdas.push_back(X_train.cols());
-  for (int i = 1; i < 100; i++) {
+  lambdas.push_back(pow(10, -3));
+  for (int i = 1; i < 10; i++) {
     lambdas.push_back(lambdas[i - 1] + .1);
   }
-
-  test_fit_regression_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambda);
-  test_fit_regression_proximal_gradient_cd(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
+  test_fit_regression_warm_start_proximal_gradient(X_train, y_train, alpha, lambdas);
+  test_fit_regression_warm_start_proximal_gradient_cd(X_train, y_train, alpha, lambdas, step_size);
 
   //
   // cv test
@@ -393,6 +392,18 @@ void test_fit_logistic_proximal_gradient(MatrixXd& X_train, VectorXd& y_train, M
 
   cout << "\nTrain accuracy : " << accuracy(y_train, predict_class(X_train, fit.intercept, fit.B)) << "\n";
   cout << "\nTest accuracy: " << accuracy(y_test, predict_class(X_test, fit.intercept, fit.B)) << "\n";
+}
+
+void test_fit_logistic_warm_start_proximal_gradient(MatrixXd& X, VectorXd& y, Matrix<double, 6, 1> alpha, vector<double>& lambdas) {
+  cout << R"(
+  Test fit_logistic_warm_start_proximal_gradient
+  -------
+  )";
+
+  vector<FitType> fits = fit_logistic_warm_start_proximal_gradient(X, y, alpha, lambdas, 10000, pow(10, -6));
+  FitType last_fit = fits.at(fits.size() - 1);
+  cout << "\nlast fit intercept:\n" << last_fit.intercept << "\n";
+  cout << "\nlast fit B:\n" << last_fit.B << "\n";
 }
 
 void test_logistic_regression() {
@@ -459,11 +470,18 @@ void test_logistic_regression() {
   double alpha_data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
   Map<Matrix<double, 6, 1>> alpha(alpha_data);
 
-  double step_size = .01;
   double lambda = .5;
-  //test_fit_logistic_proximal_gradient_coordinate_descent(X_train, y_train, X_test, y_test, alpha, lambda, step_size);
-
+  //test_fit_logistic_proximal_gradient_coordinate_descent(X_train, y_train, X_test, y_test, alpha, lambda, .01);
   test_fit_logistic_proximal_gradient(X_train, y_train, X_test, y_test, alpha, lambda);
+
+  // create lambdas
+  vector<double> lambdas;
+  lambdas.push_back(pow(10, -3));
+  for (int i = 1; i < 10; i++) {
+    lambdas.push_back(lambdas[i - 1] + .1);
+  }
+  test_fit_logistic_warm_start_proximal_gradient(X_train, y_train, alpha, lambdas);
+
 }
 
 int main() {
