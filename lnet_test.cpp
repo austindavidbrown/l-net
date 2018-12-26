@@ -510,9 +510,9 @@ int main() {
   // bench();
 
   test_regression();
-  //test_regression_prostate();
-
   test_logistic_regression();
+
+  //test_regression_prostate();
 }
 
 
