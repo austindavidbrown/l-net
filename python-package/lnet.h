@@ -1,7 +1,9 @@
 /*
 lnet
 
-The optimization functions fail silently if they do not converge by design. This is to avoid complicated logic. It will be easily noticed on the test error.
+The optimization functions fail silently and return the value if the max iterations is reached. 
+This is to avoid complicated logic. 
+It will be easily noticed on the test error.
 */
 #pragma once // guard header
 
@@ -475,6 +477,27 @@ CVType cross_validation_logistic_proximal_gradient(const MatrixXd& X, const Vect
   cv.lambdas = lambdas;
   return cv;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
